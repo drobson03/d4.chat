@@ -1,3 +1,4 @@
+import { convexQuery } from "@convex-dev/react-query";
 import type { QueryClient } from "@tanstack/react-query";
 import {
   HeadContent,
@@ -6,6 +7,7 @@ import {
   createRootRouteWithContext,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { api } from "~/convex/_generated/api";
 import styles from "~/styles/app.css?url";
 
 export const Route = createRootRouteWithContext<{
@@ -23,6 +25,18 @@ export const Route = createRootRouteWithContext<{
     ],
     links: [{ rel: "stylesheet", href: styles }],
   }),
+  beforeLoad: async ({ context }) => {
+    if (typeof window === "undefined") {
+      // since Convex Auth doesn't support SSR for non-Next.js frameworks
+      return { user: undefined };
+    }
+
+    const user = await context.queryClient.ensureQueryData(
+      convexQuery(api.users.current, {}),
+    );
+
+    return { user };
+  },
   component: RootComponent,
 });
 
