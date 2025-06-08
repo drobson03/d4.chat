@@ -23,6 +23,7 @@
 
     "baseUrl": ".",
     "paths": {
+      "~/convex/*": ["convex/*"],
       "~/*": ["src/*"]
     }
   }
