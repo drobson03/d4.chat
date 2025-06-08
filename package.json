@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vinxi dev",
     "build": "vinxi build",
-    "start": "vinxi start"
+    "start": "vinxi start",
+    "format": "prettier --write . --cache",
+    "check": "biome check ."
   },
   "dependencies": {
     "@tanstack/react-router": "^1.120.18",
@@ -18,10 +20,13 @@
     "zod": "^3.25.56"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@tailwindcss/vite": "^4.1.8",
     "@types/node": "^22.15.30",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.6",
+    "prettier": "^3.5.3",
+    "prettier-plugin-tailwindcss": "^0.6.12",
     "tailwindcss": "^4.1.8",
     "typescript": "^5.8.3",
     "vite-tsconfig-paths": "^5.1.4"
