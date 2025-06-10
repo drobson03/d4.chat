@@ -1,6 +1,6 @@
 import { createAPIFileRoute } from "@tanstack/react-start/api";
 import { smoothStream, streamText } from "ai";
-import { Effect, pipe, Predicate, Schema } from "effect";
+import { Effect, pipe, Predicate, Schema, Option } from "effect";
 import { api } from "~/convex/_generated/api";
 import {
   createEffectApiHandler,
@@ -11,6 +11,7 @@ import { ConvexHttpClient } from "~/lib/server/convex";
 import { models } from "~/lib/server/models";
 import { ChatRequestBodySchema } from "~/lib/validation/chat-request";
 import { ChatGenerationError } from "~/lib/server/ai/error";
+import { nanoid } from "nanoid";
 
 // async function saveChat(
 //   publicId: string,
@@ -56,12 +57,26 @@ export const APIRoute = createAPIFileRoute("/api/chat")({
     pipe(
       RequestTag,
       Effect.andThen((request) => request.json()),
-      Effect.andThen(Schema.decodeUnknown(ChatRequestBodySchema)),
       Effect.andThen((body) =>
+        Schema.decodeUnknown(ChatRequestBodySchema)(body),
+      ),
+      Effect.zip(RequestTag),
+      Effect.andThen(([body, request]) =>
         Effect.all([
           Effect.succeed(body),
           pipe(
             ConvexHttpClient,
+            Effect.zip(
+              Effect.succeed(
+                Option.fromNullable(request.headers.get("X-Convex-Token")),
+              ),
+            ),
+            Effect.andThen(([convex, token]) => {
+              if (Option.isSome(token)) {
+                convex.setAuth(token.value);
+              }
+              return convex;
+            }),
             Effect.andThen((convex) =>
               Effect.tryPromise(() => convex.query(api.users.current, {})),
             ),
@@ -69,10 +84,22 @@ export const APIRoute = createAPIFileRoute("/api/chat")({
               Predicate.isNotNull,
               () => new UnauthorizedError(),
             ),
+            Effect.zip(ConvexHttpClient),
+            Effect.andThen(([user, convex]) =>
+              Effect.all([
+                Effect.succeed(user),
+                Effect.tryPromise(() =>
+                  convex.mutation(api.chats.create, {
+                    id: nanoid(),
+                    model: body.model,
+                  }),
+                ),
+              ]),
+            ),
           ),
         ]),
       ),
-      Effect.andThen(([{ messages, model }]) =>
+      Effect.andThen(([{ messages, model }, [user, chatId]]) =>
         Effect.try({
           try: () =>
             streamText({

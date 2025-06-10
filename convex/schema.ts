@@ -93,12 +93,12 @@ const schema = defineSchema({
     model: v.string(),
     branchedFrom: v.optional(v.id("chats")),
     user: v.id("users"),
-  }),
+  }).index("by_user", ["user"]),
   messages: defineTable({
     ...UIMessage.fields,
     model: v.string(),
     chat: v.id("chats"),
-  }),
+  }).index("by_chat", ["chat"]),
 });
 
 export default schema;
