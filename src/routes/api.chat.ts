@@ -1,5 +1,5 @@
 import { createAPIFileRoute } from "@tanstack/react-start/api";
-import { type UIMessage, smoothStream, streamText } from "ai";
+import { smoothStream, streamText } from "ai";
 import { Effect, pipe, Predicate, Schema } from "effect";
 import { api } from "~/convex/_generated/api";
 import {
@@ -8,8 +8,9 @@ import {
   UnauthorizedError,
 } from "~/lib/server/api-runtime";
 import { ConvexHttpClient } from "~/lib/server/convex";
-import { models, type ModelName } from "~/lib/server/models";
+import { models } from "~/lib/server/models";
 import { ChatRequestBodySchema } from "~/lib/validation/chat-request";
+import { ChatGenerationError } from "~/lib/server/ai/error";
 
 // async function saveChat(
 //   publicId: string,
@@ -72,26 +73,34 @@ export const APIRoute = createAPIFileRoute("/api/chat")({
         ]),
       ),
       Effect.andThen(([{ messages, model }]) =>
-        Effect.try(() =>
-          streamText({
-            model: models[model],
-            system: "You are a helpful assistant.",
-            // TODO: fix this
-            messages: messages as any,
-            experimental_transform: smoothStream({ chunking: "word" }),
-            onError: (error) => {
-              throw error;
-            },
-          }),
-        ),
+        Effect.try({
+          try: () =>
+            streamText({
+              model: models[model],
+              system: "You are a helpful assistant.",
+              // TODO: fix this
+              messages: messages as any,
+              experimental_transform: smoothStream({ chunking: "word" }),
+              onError: (error) => {
+                throw error;
+              },
+            }),
+          catch: (cause) => {
+            throw new ChatGenerationError({ cause });
+          },
+        }),
       ),
       Effect.provide(ConvexHttpClient.Default),
       Effect.andThen((stream) =>
-        Effect.try(() =>
-          stream.toUIMessageStreamResponse({
-            sendReasoning: true,
-          }),
-        ),
+        Effect.try({
+          try: () =>
+            stream.toUIMessageStreamResponse({
+              sendReasoning: true,
+            }),
+          catch: (cause) => {
+            throw new ChatGenerationError({ cause });
+          },
+        }),
       ),
     ),
   ),
