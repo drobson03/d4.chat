@@ -13,7 +13,7 @@
   "dependencies": {
     "@ai-sdk/google": "2.0.0-alpha.11",
     "@ai-sdk/react": "2.0.0-alpha.11",
-    "@auth/core": "0.39.1",
+    "@auth/core": "0.37.0",
     "@convex-dev/auth": "^0.0.87",
     "@convex-dev/react-query": "0.0.0-alpha.8",
     "@radix-ui/react-collapsible": "^1.1.11",
