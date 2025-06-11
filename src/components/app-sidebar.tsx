@@ -145,8 +145,7 @@ function AppSidebarChatGroup({
             <AppSidebarMenuButton
               title={item.name}
               linkOptions={{
-                to: "/",
-                // to: "/chat/$chatId",
+                to: "/chat/$chatId",
                 params: { chatId: item.id },
                 activeProps: {
                   "data-active": "true",

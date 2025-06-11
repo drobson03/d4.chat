@@ -1,13 +1,14 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { UIMessage } from "./schema";
 
 export const my = query({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
 
     if (!userId) {
-      throw new Error("Unauthorized");
+      return [];
     }
 
     return await ctx.db
@@ -25,7 +26,7 @@ export const byId = query({
     const userId = await getAuthUserId(ctx);
 
     if (!userId) {
-      throw new Error("Unauthorized");
+      return null;
     }
 
     const chat = await ctx.db
@@ -35,7 +36,7 @@ export const byId = query({
       .unique();
 
     if (!chat) {
-      throw new Error("Chat not found");
+      return null;
     }
 
     const messages = await ctx.db
@@ -51,15 +52,16 @@ export const create = mutation({
   args: {
     id: v.string(),
     model: v.string(),
+    messages: v.array(UIMessage),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
 
     if (!userId) {
-      throw new Error("Unauthorized");
+      return null;
     }
 
-    return await ctx.db.insert("chats", {
+    const chatId = await ctx.db.insert("chats", {
       id: args.id,
       model: args.model,
       name: "New Chat",
@@ -67,5 +69,16 @@ export const create = mutation({
       updatedAt: Date.now(),
       user: userId,
     });
+
+    for (const message of args.messages) {
+      await ctx.db.insert("messages", {
+        ...message,
+        chat: chatId,
+        model: args.model,
+        user: userId,
+      });
+    }
+
+    return chatId;
   },
 });

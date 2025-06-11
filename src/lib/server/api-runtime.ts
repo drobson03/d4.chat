@@ -28,30 +28,27 @@ type ApiHandlerEffect<E extends Error | unknown> = Effect.Effect<
 export function createEffectApiHandler<E extends Error | unknown>(
   effect: ApiHandlerEffect<E>,
 ) {
-  return ({ request }: { request: Request }) => {
+  return async ({ request }: { request: Request }) => {
     const runtime = createApiRuntime(request);
 
     const effectWithFallback = effect.pipe(
-      Effect.match({
-        onFailure: (error): Response => {
-          Console.error(
-            "[Effect via Services] Execution failed:",
-            Cause.isCause(error)
-              ? Cause.pretty(error)
-              : error instanceof Error
-                ? error.message
-                : error,
-          );
+      Effect.catchAll((error) => {
+        Console.error(
+          "[Effect via Services] Execution failed:",
+          Cause.isCause(error)
+            ? Cause.pretty(error)
+            : error instanceof Error
+              ? error.message
+              : error,
+        );
 
-          return new Response("Internal Server Error", {
-            status: 500,
-          });
-        },
-        onSuccess: (response) => response,
+        return Effect.succeed(
+          new Response("Internal Server Error", { status: 500 }),
+        );
       }),
     );
 
-    return runtime.runPromise(effectWithFallback);
+    return await runtime.runPromise(effectWithFallback);
   };
 }
 

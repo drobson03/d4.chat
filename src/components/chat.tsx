@@ -1,6 +1,6 @@
 import { useChat } from "@ai-sdk/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Markdown from "react-markdown";
 import type { ModelName } from "~/lib/server/models";
 import TextareaAutosize from "react-textarea-autosize";
@@ -38,41 +38,36 @@ export function Chat({
   const navigate = useNavigate();
   const authToken = useAuthToken();
 
-  const { data: chat } = useQuery({
-    ...convexQuery(api.chats.byId, { id: id! }),
-    enabled: Boolean(id),
-  });
-
-  const initialMessages = useMemo(() => {
-    return chat?.messages;
-  }, [chat?.messages]);
-
   const [input, setInput] = useState("");
 
   const [model, setModel] = useState<ModelName>(
     (Object.keys(modelMetadata ?? {}).at(0) ??
       "gemini-2.5-flash-preview-05-20") as ModelName,
   );
-
-  const transport = useMemo(
-    () =>
-      new DefaultChatTransport({
-        headers: {
-          "X-Convex-Token": authToken ?? "",
-        },
-      }),
-    [authToken],
-  );
-
-  const { messages, status, sendMessage } = useChat({
-    // body: {
-    //   model,
-    // },
-    transport,
+  const { messages, status, sendMessage, setMessages } = useChat({
     onFinish: () => {
       onFinish?.();
     },
   });
+
+  const { data: chat } = useQuery({
+    ...convexQuery(api.chats.byId, { id: id! }),
+    enabled: Boolean(id),
+  });
+
+  const chatMessages = useMemo(() => {
+    return chat?.messages.map((message) => ({
+      id: message._id,
+      ...message,
+    }));
+  }, [chat?.messages]);
+
+  useEffect(() => {
+    if (chatMessages) {
+      // TODO: fix messages type
+      setMessages(chatMessages as any);
+    }
+  }, [chatMessages]);
 
   function handleSubmit(
     e:
@@ -88,57 +83,33 @@ export function Chat({
       params: { chatId },
     });
 
-    sendMessage({
-      role: "user",
-      parts: [
+    if (authToken) {
+      sendMessage(
         {
-          type: "text",
-          text: input,
+          role: "user",
+          parts: [
+            {
+              type: "text",
+              text: input,
+            },
+          ],
+          metadata: {
+            model,
+            chatId,
+          },
         },
-      ],
-      metadata: {
-        model,
-        chatId,
-      },
-    });
+        {
+          headers: {
+            "X-Convex-Token": authToken,
+          },
+          body: {
+            chatId,
+            model,
+          },
+        },
+      );
+    }
   }
-
-  // useEffect(() => {
-  //   if (chatPublicId && !id && messages.length > 0) {
-  //     // const fakeChat = {
-  //     //   id: "0",
-  //     //   name: "New Chat",
-  //     //   publicId: chatPublicId,
-  //     //   userId: user?._id,
-  //     //   createdAt: new Date(),
-  //     //   updatedAt: new Date(),
-  //     //   pinned: false,
-  //     // };
-  //     // queryClient.setQueryData(trpc.chats.id.queryKey({ id: chatPublicId }), {
-  //     //   ...fakeChat,
-  //     //   messages: messages.map((message) => ({
-  //     //     chatId: "0",
-  //     //     id: message.id,
-  //     //     content: message.content,
-  //     //     role: message.role,
-  //     //     parts: message.parts,
-  //     //     createdAt: new Date(),
-  //     //     updatedAt: new Date(),
-  //     //     model: message.role !== "user" ? model : null,
-  //     //   })),
-  //     // });
-  //     // queryClient.setQueryData(trpc.chats.my.queryKey(), (old) => [
-  //     //   fakeChat,
-  //     //   ...(old ?? []),
-  //     // ]);
-
-  //     void navigate({
-  //       from: "/chat/",
-  //       to: "/chat/$chatId",
-  //       params: { chatId: chatPublicId },
-  //     });
-  //   }
-  // }, [chatPublicId, id, navigate, messages]);
 
   return (
     <>

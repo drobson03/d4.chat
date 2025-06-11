@@ -1,13 +1,17 @@
-import { createServerFileRoute } from "@tanstack/react-start/server"
-import { smoothStream, streamText } from "ai";
-import { Effect, pipe, Predicate, Schema, Option } from "effect";
+import { createServerFileRoute } from "@tanstack/react-start/server";
+import { convertToModelMessages, smoothStream, streamText } from "ai";
+import { Console, Effect, pipe, Predicate, Schema, Option } from "effect";
 import { api } from "~/convex/_generated/api";
 import {
   createEffectApiHandler,
   RequestTag,
   UnauthorizedError,
 } from "~/lib/server/api-runtime";
-import { ConvexHttpClient } from "~/lib/server/convex";
+import {
+  ConvexAuth,
+  ConvexConfig,
+  ConvexHttpClient,
+} from "~/lib/server/convex";
 import { models } from "~/lib/server/models";
 import { ChatRequestBodySchema } from "~/lib/validation/chat-request";
 import { ChatGenerationError } from "~/lib/server/ai/error";
@@ -60,22 +64,13 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       Effect.andThen((body) =>
         Schema.decodeUnknown(ChatRequestBodySchema)(body),
       ),
-      Effect.zip(RequestTag),
-      Effect.andThen(([body, request]) =>
+      Effect.andThen((body) =>
         Effect.all([
           Effect.succeed(body),
           pipe(
             ConvexHttpClient,
-            Effect.zip(
-              Effect.succeed(
-                Option.fromNullable(request.headers.get("X-Convex-Token")),
-              ),
-            ),
-            Effect.andThen(([convex, token]) => {
-              if (Option.isSome(token)) {
-                convex.setAuth(token.value);
-              }
-              return convex;
+            Effect.tap((convex) => {
+              console.log("convex", convex);
             }),
             Effect.andThen((convex) =>
               Effect.tryPromise(() => convex.query(api.users.current, {})),
@@ -92,6 +87,8 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                   convex.mutation(api.chats.create, {
                     id: nanoid(),
                     model: body.model,
+                    // TODO: fix messages type
+                    messages: body.messages as any,
                   }),
                 ),
               ]),
@@ -100,68 +97,55 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         ]),
       ),
       Effect.andThen(([{ messages, model }, [user, chatId]]) =>
-        Effect.try({
-          try: () =>
-            streamText({
-              model: models[model],
-              system: "You are a helpful assistant.",
-              // TODO: fix this
-              messages: messages as any,
-              experimental_transform: smoothStream({ chunking: "word" }),
-              onError: (error) => {
-                throw error;
-              },
+        pipe(
+          // TODO: fix messages type
+          Effect.try(() => convertToModelMessages(messages as any)),
+          Effect.andThen((messages) =>
+            Effect.try({
+              try: () =>
+                streamText({
+                  model: models[model],
+                  system: "You are a helpful assistant.",
+                  messages,
+                  experimental_transform: smoothStream({ chunking: "word" }),
+                }),
+              catch: (error) => new ChatGenerationError({ cause: error }),
             }),
-          catch: (cause) => {
-            throw new ChatGenerationError({ cause });
-          },
-        }),
+          ),
+          Effect.andThen((stream) =>
+            Effect.try({
+              try: () =>
+                stream.toUIMessageStreamResponse({
+                  sendReasoning: true,
+                }),
+              catch: (error) => new ChatGenerationError({ cause: error }),
+            }),
+          ),
+        ),
       ),
-      Effect.provide(ConvexHttpClient.Default),
-      Effect.andThen((stream) =>
-        Effect.try({
-          try: () =>
-            stream.toUIMessageStreamResponse({
-              sendReasoning: true,
+      Effect.catchTags({
+        UnauthorizedError: () =>
+          Effect.succeed(new Response("Unauthorized", { status: 401 })),
+        ParseError: () =>
+          Effect.succeed(new Response("Bad Request", { status: 400 })),
+        ChatGenerationError: () =>
+          Effect.succeed(
+            new Response("Chat Generation Error", { status: 500 }),
+          ),
+      }),
+      Effect.provide(ConvexHttpClient.DefaultWithoutDependencies),
+      Effect.provide(ConvexConfig.Default),
+      Effect.provideServiceEffect(
+        ConvexAuth,
+        pipe(
+          RequestTag,
+          Effect.andThen((request) =>
+            ConvexAuth.make({
+              token: Option.fromNullable(request.headers.get("X-Convex-Token")),
             }),
-          catch: (cause) => {
-            throw new ChatGenerationError({ cause });
-          },
-        }),
+          ),
+        ),
       ),
     ),
   ),
-  // POST: async ({ request, params }) => {
-  //   const { id, messages, model } = parseResult.output;
-
-  //   const result = streamText({
-  //     model: models[model],
-  //     system: "You are a helpful assistant.",
-  //     messages: messages as Array<Omit<UIMessage, "id">>,
-  //     experimental_transform: smoothStream({ chunking: "word" }),
-  //     experimental_generateMessageId: () => generateNanoid(),
-  //     onError: (error) => {
-  //       console.error(error);
-  //     },
-  //     onFinish: async ({ response }) => {
-  //       try {
-  //         await saveChat(
-  //           id,
-  //           session.user.id,
-  //           appendResponseMessages({
-  //             messages,
-  //             responseMessages: response.messages,
-  //           }) as UIMessage[],
-  //           model,
-  //         );
-  //       } catch (error) {
-  //         console.error(error);
-  //       }
-  //     },
-  //   });
-
-  //   return result.toUIMessageStreamResponse({
-  //     sendReasoning: true,
-  //   });
-  // },
 });

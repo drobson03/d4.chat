@@ -61,7 +61,7 @@ const Attachment = v.object({
   url: v.string(),
 });
 
-const UIMessage = v.object({
+export const UIMessage = v.object({
   role: v.union(
     v.literal("system"),
     v.literal("user"),
@@ -69,7 +69,6 @@ const UIMessage = v.object({
     v.literal("data"),
   ),
   createdAt: v.optional(v.number()),
-  content: v.string(),
   annotations: v.optional(v.array(v.any())),
   parts: v.array(
     v.union(
@@ -98,7 +97,10 @@ const schema = defineSchema({
     ...UIMessage.fields,
     model: v.string(),
     chat: v.id("chats"),
-  }).index("by_chat", ["chat"]),
+    user: v.optional(v.id("users")),
+  })
+    .index("by_chat", ["chat"])
+    .index("by_user", ["user"]),
 });
 
 export default schema;

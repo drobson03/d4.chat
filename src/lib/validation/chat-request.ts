@@ -68,7 +68,6 @@ const UIMessageSchema = Schema.Struct({
     Schema.Literal("data"),
   ),
   createdAt: Schema.optional(Schema.Number),
-  content: Schema.String,
   annotations: Schema.optional(Schema.Array(Schema.Unknown)),
   parts: Schema.Array(
     Schema.Union(
@@ -84,7 +83,6 @@ const UIMessageSchema = Schema.Struct({
 
 export const ChatRequestBodySchema = Schema.Struct({
   id: Schema.String,
-  convexSessionId: Schema.String,
   model: ModelSchema,
   messages: Schema.Array(UIMessageSchema),
 });
