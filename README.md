@@ -9,3 +9,4 @@ So this ran during my entire exam period, had to do at the end of the day after 
 | 1   | 2 hours   |
 | 2   | 1 hour    |
 | 3   | 1.3 hours |
+| 4   | 3 hours   |
