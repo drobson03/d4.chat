@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 import { convexQuery } from "@convex-dev/react-query";
 import type { QueryClient } from "@tanstack/react-query";
 import {

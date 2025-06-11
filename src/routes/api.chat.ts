@@ -1,4 +1,4 @@
-import { createAPIFileRoute } from "@tanstack/react-start/api";
+import { createServerFileRoute } from "@tanstack/react-start/server"
 import { smoothStream, streamText } from "ai";
 import { Effect, pipe, Predicate, Schema, Option } from "effect";
 import { api } from "~/convex/_generated/api";
@@ -52,7 +52,7 @@ import { nanoid } from "nanoid";
 //     });
 // }
 
-export const APIRoute = createAPIFileRoute("/api/chat")({
+export const ServerRoute = createServerFileRoute("/api/chat").methods({
   POST: createEffectApiHandler(
     pipe(
       RequestTag,
