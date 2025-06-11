@@ -29,7 +29,7 @@ export function createEffectApiHandler<E extends Error | unknown>(
   effect: ApiHandlerEffect<E>,
 ) {
   return ({ request }: { request: Request }) => {
-    const runtime = ManagedRuntime.make(Layer.succeed(RequestTag, request));
+    const runtime = createApiRuntime(request);
 
     const effectWithFallback = effect.pipe(
       Effect.match({
