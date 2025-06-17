@@ -57,7 +57,6 @@ const ApiChatServerRoute = ApiChatServerRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '': typeof AuthedRouteWithChildren
   '/chat': typeof AuthedChatRouteWithChildren
   '/auth/sign-in': typeof AuthSignInRoute
   '/': typeof AuthedIndexRoute
@@ -81,7 +80,7 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '' | '/chat' | '/auth/sign-in' | '/' | '/chat/$chatId' | '/chat/'
+  fullPaths: '/chat' | '/auth/sign-in' | '/' | '/chat/$chatId' | '/chat/'
   fileRoutesByTo: FileRoutesByTo
   to: '/auth/sign-in' | '/' | '/chat/$chatId' | '/chat'
   id:
@@ -129,19 +128,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authed/chat': {
-      id: '/_authed/chat'
-      path: '/chat'
-      fullPath: '/chat'
-      preLoaderRoute: typeof AuthedChatRouteImport
+    '/_authed/': {
+      id: '/_authed/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedIndexRouteImport
       parentRoute: typeof AuthedRoute
-    }
-    '/api/chat': {
-      id: '/api/chat'
-      path: ''
-      fullPath: '/api/chat'
-      preLoaderRoute: unknown
-      parentRoute: typeof rootRouteImport
     }
     '/auth/sign-in': {
       id: '/auth/sign-in'
@@ -150,19 +142,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authed/': {
-      id: '/_authed/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthedIndexRouteImport
+    '/_authed/chat': {
+      id: '/_authed/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof AuthedChatRouteImport
       parentRoute: typeof AuthedRoute
-    }
-    '/_authed/chat/$chatId': {
-      id: '/_authed/chat/$chatId'
-      path: '/$chatId'
-      fullPath: '/chat/$chatId'
-      preLoaderRoute: typeof AuthedChatChatIdRouteImport
-      parentRoute: typeof AuthedChatRoute
     }
     '/_authed/chat/': {
       id: '/_authed/chat/'
@@ -171,57 +156,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedChatIndexRouteImport
       parentRoute: typeof AuthedChatRoute
     }
+    '/_authed/chat/$chatId': {
+      id: '/_authed/chat/$chatId'
+      path: '/$chatId'
+      fullPath: '/chat/$chatId'
+      preLoaderRoute: typeof AuthedChatChatIdRouteImport
+      parentRoute: typeof AuthedChatRoute
+    }
   }
 }
 declare module '@tanstack/react-start/server' {
   interface ServerFileRoutesByPath {
-    '/_authed': {
-      id: '/_authed'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: unknown
-      parentRoute: typeof rootServerRouteImport
-    }
-    '/_authed/chat': {
-      id: '/_authed/chat'
-      path: '/chat'
-      fullPath: '/chat'
-      preLoaderRoute: unknown
-      parentRoute: typeof rootServerRouteImport
-    }
     '/api/chat': {
       id: '/api/chat'
       path: '/api/chat'
       fullPath: '/api/chat'
       preLoaderRoute: typeof ApiChatServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    '/auth/sign-in': {
-      id: '/auth/sign-in'
-      path: '/auth/sign-in'
-      fullPath: '/auth/sign-in'
-      preLoaderRoute: unknown
-      parentRoute: typeof rootServerRouteImport
-    }
-    '/_authed/': {
-      id: '/_authed/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: unknown
-      parentRoute: typeof rootServerRouteImport
-    }
-    '/_authed/chat/$chatId': {
-      id: '/_authed/chat/$chatId'
-      path: '/$chatId'
-      fullPath: '/chat/$chatId'
-      preLoaderRoute: unknown
-      parentRoute: typeof rootServerRouteImport
-    }
-    '/_authed/chat/': {
-      id: '/_authed/chat/'
-      path: '/'
-      fullPath: '/chat/'
-      preLoaderRoute: unknown
       parentRoute: typeof rootServerRouteImport
     }
   }
