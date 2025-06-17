@@ -25,6 +25,12 @@
     "paths": {
       "~/convex/*": ["convex/*"],
       "~/*": ["src/*"]
-    }
+    },
+
+    "plugins": [
+      {
+        "name": "@effect/language-service"
+      }
+    ]
   }
 }
