@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { UIMessage } from "./schema";
+import { Id } from "./_generated/dataModel";
 
 export const my = query({
   handler: async (ctx) => {
@@ -48,7 +49,7 @@ export const byId = query({
   },
 });
 
-export const create = mutation({
+export const appendMessagesToChat = mutation({
   args: {
     id: v.string(),
     model: v.string(),
@@ -61,14 +62,22 @@ export const create = mutation({
       return null;
     }
 
-    const chatId = await ctx.db.insert("chats", {
-      id: args.id,
-      model: args.model,
-      name: "New Chat",
-      pinned: false,
-      updatedAt: Date.now(),
-      user: user.tokenIdentifier,
-    });
+    const chat = await ctx.db
+      .query("chats")
+      .withIndex("by_user", (q) => q.eq("user", user.tokenIdentifier))
+      .filter((q) => q.eq(q.field("id"), args.id))
+      .unique();
+
+    const chatId =
+      chat?._id ??
+      (await ctx.db.insert("chats", {
+        id: args.id,
+        model: args.model,
+        name: "New Chat",
+        pinned: false,
+        updatedAt: Date.now(),
+        user: user.tokenIdentifier,
+      }));
 
     for (const message of args.messages) {
       await ctx.db.insert("messages", {

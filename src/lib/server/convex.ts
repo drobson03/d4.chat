@@ -1,5 +1,7 @@
-import { Config, Context, Effect, Option, pipe } from "effect";
+import { Config, Effect, Option, pipe } from "effect";
 import { ConvexHttpClient as BrowserConvexHttpClient } from "convex/browser";
+import { RequestTag } from "./api-runtime";
+import { getAuth } from "@clerk/tanstack-react-start/server";
 
 export class ConvexConfig extends Effect.Service<ConvexConfig>()(
   "app/convex:Config",
@@ -10,12 +12,22 @@ export class ConvexConfig extends Effect.Service<ConvexConfig>()(
   },
 ) {}
 
-export class ConvexAuth extends Effect.Service<ConvexAuth>()(
-  "app/convex:Auth",
+export class ConvexClerkAuth extends Effect.Service<ConvexClerkAuth>()(
+  "app/convex:ClerkAuth",
   {
     succeed: {
-      token: Option.none<string>(),
-    },
+      getToken: () =>
+        pipe(
+          RequestTag,
+          Effect.andThen((request) =>
+            Effect.tryPromise(() => getAuth(request)),
+          ),
+          Effect.andThen((auth) =>
+            Effect.tryPromise(() => auth.getToken({ template: "convex" })),
+          ),
+          Effect.andThen((token) => Effect.succeed(Option.fromNullable(token))),
+        ),
+    } as const,
   },
 ) {}
 
@@ -24,19 +36,22 @@ export class ConvexHttpClient extends Effect.Service<ConvexHttpClient>()(
   {
     effect: pipe(
       ConvexConfig,
-      Effect.zip(ConvexAuth),
-      Effect.andThen(([config, auth]) => {
+      Effect.zip(ConvexClerkAuth),
+      Effect.andThen(([config, clerkAuth]) =>
+        Effect.all([Effect.succeed(config), clerkAuth.getToken()]),
+      ),
+      Effect.andThen(([config, token]) => {
         const client = new BrowserConvexHttpClient(
           config.url,
         ) as BrowserConvexHttpClient satisfies BrowserConvexHttpClient;
 
-        if (Option.isSome(auth.token)) {
-          client.setAuth(auth.token.value);
+        if (Option.isSome(token)) {
+          client.setAuth(token.value);
         }
 
         return client;
       }),
     ),
-    dependencies: [ConvexConfig.Default, ConvexAuth.Default],
+    dependencies: [ConvexConfig.Default, ConvexClerkAuth.Default],
   },
 ) {}

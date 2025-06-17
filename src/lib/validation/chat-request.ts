@@ -81,8 +81,13 @@ const UIMessageSchema = Schema.Struct({
   experimental_attachements: Schema.optional(Schema.Array(AttachmentSchema)),
 });
 
+/**
+ * [Nano ID](https://github.com/ai/nanoid) regex.
+ */
+export const NANO_ID_REGEX: RegExp = /^[\w-]+$/u;
+
 export const ChatRequestBodySchema = Schema.Struct({
-  id: Schema.String,
+  chatId: Schema.String.pipe(Schema.pattern(NANO_ID_REGEX)),
   model: ModelSchema,
   messages: Schema.Array(UIMessageSchema),
 });

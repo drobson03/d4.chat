@@ -7,6 +7,8 @@ import {
 } from "~/components/ui/sidebar";
 import { AppSidebar } from "~/components/app-sidebar";
 import { Breadcrumbs } from "~/components/breadcrumbs";
+import { api } from "~/convex/_generated/api";
+import { convexQuery } from "@convex-dev/react-query";
 
 export const Route = createFileRoute("/_authed")({
   beforeLoad: async ({ context }) => {
@@ -17,6 +19,9 @@ export const Route = createFileRoute("/_authed")({
     return {
       userId: context.userId,
     };
+  },
+  loader: ({ context }) => {
+    context.queryClient.prefetchQuery(convexQuery(api.chats.my, {}));
   },
   component: RouteComponent,
 });

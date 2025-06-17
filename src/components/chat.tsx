@@ -1,5 +1,5 @@
 import { useChat } from "@ai-sdk/react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import Markdown from "react-markdown";
 import type { ModelName } from "~/lib/server/models";
@@ -16,15 +16,16 @@ import { textareaClassName } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
 import { ChevronRightIcon, Loader2Icon, SendIcon } from "lucide-react";
 import { nanoid } from "nanoid";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouteContext } from "@tanstack/react-router";
 import { modelMetadata } from "~/lib/client/models";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
-import { convexQuery } from "@convex-dev/react-query";
+import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
 import { api } from "~/convex/_generated/api";
+import type { Doc, Id } from "~/convex/_generated/dataModel";
 
 export function Chat({
   id,
@@ -34,6 +35,46 @@ export function Chat({
   onFinish?: () => void | Promise<void>;
 }) {
   const navigate = useNavigate();
+  const { token } = useRouteContext({ from: "__root__" });
+
+  const createChatMutation = useMutation({
+    mutationFn: useConvexMutation(
+      api.chats.appendMessagesToChat,
+    ).withOptimisticUpdate((localStore, args) => {
+      const currentValue = localStore.getQuery(api.chats.my);
+
+      if (currentValue && token) {
+        const newChat: Doc<"chats"> = {
+          _id: crypto.randomUUID() as Id<"chats">,
+          _creationTime: Date.now(),
+          id: args.id,
+          model: args.model,
+          name: "New Chat",
+          pinned: false,
+          updatedAt: Date.now(),
+          user: token,
+        };
+
+        localStore.setQuery(api.chats.my, {}, [...currentValue, newChat]);
+
+        localStore.setQuery(
+          api.chats.byId,
+          { id: args.id },
+          {
+            ...newChat,
+            messages: args.messages.map((message) => ({
+              ...message,
+              _id: crypto.randomUUID() as Id<"messages">,
+              _creationTime: Date.now(),
+              chat: newChat._id,
+              model: args.model,
+              user: token,
+            })),
+          },
+        );
+      }
+    }),
+  });
 
   const [input, setInput] = useState("");
 
@@ -74,10 +115,15 @@ export function Chat({
     e.preventDefault();
     const chatId = nanoid();
 
-    void navigate({
-      from: "/chat/",
-      to: "/chat/$chatId",
-      params: { chatId },
+    void createChatMutation.mutateAsync({
+      id: chatId,
+      model,
+      messages: [
+        {
+          role: "user",
+          parts: [{ type: "text", text: input }],
+        },
+      ],
     });
 
     sendMessage(
@@ -100,6 +146,12 @@ export function Chat({
         },
       },
     );
+
+    void navigate({
+      from: "/chat/",
+      to: "/chat/$chatId",
+      params: { chatId },
+    });
   }
 
   return (
@@ -136,24 +188,25 @@ export function Chat({
                 {message.parts.find((part) => part.type === "text")?.text ?? ""}
               </Markdown>
             </div>
-            {chat?.messages.find((m) => m._id === message.id)?.model && (
-              <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                {modelMetadata[
-                  chat?.messages.find((m) => m._id === message.id)
-                    ?.model as ModelName
-                ].icon({
-                  className: "size-4",
-                })}
-                <span className="text-muted-foreground text-sm">
-                  {
-                    modelMetadata[
-                      chat?.messages.find((m) => m._id === message.id)
-                        ?.model as ModelName
-                    ].label
-                  }
-                </span>
-              </div>
-            )}
+            {chat?.messages.find((m) => m._id === message.id)?.model &&
+              message.role !== "user" && (
+                <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                  {modelMetadata[
+                    chat?.messages.find((m) => m._id === message.id)
+                      ?.model as ModelName
+                  ].icon({
+                    className: "size-4",
+                  })}
+                  <span className="text-muted-foreground text-sm">
+                    {
+                      modelMetadata[
+                        chat?.messages.find((m) => m._id === message.id)
+                          ?.model as ModelName
+                      ].label
+                    }
+                  </span>
+                </div>
+              )}
           </div>
         ))}
         {status === "submitted" ? (
