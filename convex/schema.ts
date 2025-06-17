@@ -1,5 +1,4 @@
 import { defineSchema, defineTable } from "convex/server";
-import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 const TextUIPart = v.object({
@@ -83,7 +82,6 @@ export const UIMessage = v.object({
 });
 
 const schema = defineSchema({
-  ...authTables,
   chats: defineTable({
     id: v.string(),
     name: v.string(),
@@ -91,13 +89,13 @@ const schema = defineSchema({
     updatedAt: v.number(),
     model: v.string(),
     branchedFrom: v.optional(v.id("chats")),
-    user: v.id("users"),
+    user: v.string(),
   }).index("by_user", ["user"]),
   messages: defineTable({
     ...UIMessage.fields,
-    model: v.string(),
+    model: v.optional(v.string()),
     chat: v.id("chats"),
-    user: v.optional(v.id("users")),
+    user: v.optional(v.string()),
   })
     .index("by_chat", ["chat"])
     .index("by_user", ["user"]),

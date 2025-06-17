@@ -1,7 +1,8 @@
 /// <reference types="vite/client" />
 
-import { convexQuery } from "@convex-dev/react-query";
+import type { ConvexQueryClient } from "@convex-dev/react-query";
 import type { QueryClient } from "@tanstack/react-query";
+import type { ConvexReactClient } from "convex/react";
 import {
   HeadContent,
   Outlet,
@@ -9,11 +10,15 @@ import {
   createRootRouteWithContext,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { api } from "~/convex/_generated/api";
+import { fetchClerkAuth } from "~/lib/server/auth";
 import styles from "~/styles/app.css?url";
+import { ClerkProvider, useAuth } from "@clerk/tanstack-react-start";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
+  convexClient: ConvexReactClient;
+  convexQueryClient: ConvexQueryClient;
 }>()({
   head: () => ({
     meta: [
@@ -27,26 +32,35 @@ export const Route = createRootRouteWithContext<{
     ],
     links: [{ rel: "stylesheet", href: styles }],
   }),
-  beforeLoad: async ({ context }) => {
-    if (typeof window === "undefined") {
-      // since Convex Auth doesn't support SSR for non-Next.js frameworks
-      return { user: undefined };
+  beforeLoad: async (ctx) => {
+    const auth = await fetchClerkAuth();
+    const { userId, token } = auth;
+
+    // During SSR only (the only time serverHttpClient exists),
+    // set the Clerk auth token to make HTTP queries with.
+    if (token) {
+      ctx.context.convexQueryClient.serverHttpClient?.setAuth(token);
     }
 
-    const user = await context.queryClient.ensureQueryData(
-      convexQuery(api.users.current, {}),
-    );
-
-    return { user };
+    return {
+      userId,
+      token,
+    };
   },
   component: RootComponent,
 });
 
 function RootComponent() {
+  const context = Route.useRouteContext();
+
   return (
-    <RootDocument>
-      <Outlet />
-    </RootDocument>
+    <ClerkProvider>
+      <ConvexProviderWithClerk client={context.convexClient} useAuth={useAuth}>
+        <RootDocument>
+          <Outlet />
+        </RootDocument>
+      </ConvexProviderWithClerk>
+    </ClerkProvider>
   );
 }
 

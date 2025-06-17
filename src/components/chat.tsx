@@ -16,7 +16,7 @@ import { textareaClassName } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
 import { ChevronRightIcon, Loader2Icon, SendIcon } from "lucide-react";
 import { nanoid } from "nanoid";
-import { useNavigate, useRouteContext } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { modelMetadata } from "~/lib/client/models";
 import {
   Collapsible,
@@ -25,8 +25,6 @@ import {
 } from "~/components/ui/collapsible";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "~/convex/_generated/api";
-import { DefaultChatTransport } from "ai";
-import { useAuthToken } from "@convex-dev/auth/react";
 
 export function Chat({
   id,
@@ -36,7 +34,6 @@ export function Chat({
   onFinish?: () => void | Promise<void>;
 }) {
   const navigate = useNavigate();
-  const authToken = useAuthToken();
 
   const [input, setInput] = useState("");
 
@@ -83,32 +80,27 @@ export function Chat({
       params: { chatId },
     });
 
-    if (authToken) {
-      sendMessage(
-        {
-          role: "user",
-          parts: [
-            {
-              type: "text",
-              text: input,
-            },
-          ],
-          metadata: {
-            model,
-            chatId,
+    sendMessage(
+      {
+        role: "user",
+        parts: [
+          {
+            type: "text",
+            text: input,
           },
+        ],
+        metadata: {
+          model,
+          chatId,
         },
-        {
-          headers: {
-            "X-Convex-Token": authToken,
-          },
-          body: {
-            chatId,
-            model,
-          },
+      },
+      {
+        body: {
+          chatId,
+          model,
         },
-      );
-    }
+      },
+    );
   }
 
   return (

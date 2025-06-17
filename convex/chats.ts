@@ -1,19 +1,18 @@
-import { getAuthUserId } from "@convex-dev/auth/server";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { UIMessage } from "./schema";
 
 export const my = query({
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+    const user = await ctx.auth.getUserIdentity();
 
-    if (!userId) {
+    if (!user) {
       return [];
     }
 
     return await ctx.db
       .query("chats")
-      .withIndex("by_user", (q) => q.eq("user", userId))
+      .withIndex("by_user", (q) => q.eq("user", user.tokenIdentifier))
       .collect();
   },
 });
@@ -23,15 +22,15 @@ export const byId = query({
     id: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const user = await ctx.auth.getUserIdentity();
 
-    if (!userId) {
+    if (!user) {
       return null;
     }
 
     const chat = await ctx.db
       .query("chats")
-      .withIndex("by_user", (q) => q.eq("user", userId))
+      .withIndex("by_user", (q) => q.eq("user", user.tokenIdentifier))
       .filter((q) => q.eq(q.field("id"), args.id))
       .unique();
 
@@ -55,9 +54,9 @@ export const create = mutation({
     messages: v.array(UIMessage),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const user = await ctx.auth.getUserIdentity();
 
-    if (!userId) {
+    if (!user) {
       return null;
     }
 
@@ -67,7 +66,7 @@ export const create = mutation({
       name: "New Chat",
       pinned: false,
       updatedAt: Date.now(),
-      user: userId,
+      user: user.tokenIdentifier,
     });
 
     for (const message of args.messages) {
@@ -75,7 +74,7 @@ export const create = mutation({
         ...message,
         chat: chatId,
         model: args.model,
-        user: userId,
+        user: user.tokenIdentifier,
       });
     }
 

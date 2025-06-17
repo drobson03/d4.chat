@@ -72,31 +72,25 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
             Effect.tap((convex) => {
               console.log("convex", convex);
             }),
-            Effect.andThen((convex) =>
-              Effect.tryPromise(() => convex.query(api.users.current, {})),
-            ),
             Effect.filterOrFail(
               Predicate.isNotNull,
               () => new UnauthorizedError(),
             ),
             Effect.zip(ConvexHttpClient),
-            Effect.andThen(([user, convex]) =>
-              Effect.all([
-                Effect.succeed(user),
-                Effect.tryPromise(() =>
-                  convex.mutation(api.chats.create, {
-                    id: nanoid(),
-                    model: body.model,
-                    // TODO: fix messages type
-                    messages: body.messages as any,
-                  }),
-                ),
-              ]),
+            Effect.andThen(([convex]) =>
+              Effect.tryPromise(() =>
+                convex.mutation(api.chats.create, {
+                  id: nanoid(),
+                  model: body.model,
+                  // TODO: fix messages type
+                  messages: body.messages as any,
+                }),
+              ),
             ),
           ),
         ]),
       ),
-      Effect.andThen(([{ messages, model }, [user, chatId]]) =>
+      Effect.andThen(([{ messages, model }, chatId]) =>
         pipe(
           // TODO: fix messages type
           Effect.try(() => convertToModelMessages(messages as any)),

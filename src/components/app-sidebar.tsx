@@ -1,3 +1,4 @@
+import { useUser } from "@clerk/tanstack-react-start";
 import { convexQuery } from "@convex-dev/react-query";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -61,7 +62,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       ),
   });
 
-  const { data: user } = useQuery(convexQuery(api.users.current, {}));
+  const { user } = useUser();
 
   return (
     <Sidebar {...props}>
@@ -69,7 +70,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <Link className="mx-auto text-lg font-bold tracking-wide" to="/chat">
           d4
         </Link>
-        <p>{user?.name}</p>
+        <p>{user?.fullName}</p>
         {/* <SearchForm /> */}
       </SidebarHeader>
       <SidebarContent>
