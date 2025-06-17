@@ -13,6 +13,7 @@ export const my = query({
     return await ctx.db
       .query("chats")
       .withIndex("by_user", (q) => q.eq("user", user.tokenIdentifier))
+      .order("desc")
       .collect();
   },
 });
@@ -79,5 +80,49 @@ export const create = mutation({
     }
 
     return chatId;
+  },
+});
+
+export const deleteChat = mutation({
+  args: {
+    id: v.id("chats"),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.auth.getUserIdentity();
+
+    if (!user) {
+      return null;
+    }
+
+    const chat = await ctx.db.get(args.id);
+
+    if (!chat || chat.user !== user.tokenIdentifier) {
+      return;
+    }
+
+    await ctx.db.delete(args.id);
+  },
+});
+
+export const togglePinChat = mutation({
+  args: {
+    id: v.id("chats"),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.auth.getUserIdentity();
+
+    if (!user) {
+      return;
+    }
+
+    const chat = await ctx.db.get(args.id);
+
+    if (!chat || chat.user !== user.tokenIdentifier) {
+      return;
+    }
+
+    await ctx.db.patch(args.id, {
+      pinned: !chat.pinned,
+    });
   },
 });

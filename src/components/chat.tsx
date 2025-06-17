@@ -49,7 +49,7 @@ export function Chat({
 
   const { data: chat } = useQuery({
     ...convexQuery(api.chats.byId, { id: id! }),
-    enabled: Boolean(id),
+    enabled: () => Boolean(id),
   });
 
   const chatMessages = useMemo(() => {
@@ -90,7 +90,6 @@ export function Chat({
           },
         ],
         metadata: {
-          model,
           chatId,
         },
       },

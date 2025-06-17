@@ -1,13 +1,13 @@
 import { useUser } from "@clerk/tanstack-react-start";
-import { convexQuery } from "@convex-dev/react-query";
-import { useQuery } from "@tanstack/react-query";
+import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Link,
   type RegisteredRouter,
   type ValidateLinkOptions,
 } from "@tanstack/react-router";
 import { isAfter, isToday, isYesterday, subDays } from "date-fns";
-import { PinIcon } from "lucide-react";
+import { PinIcon, PinOffIcon, TrashIcon } from "lucide-react";
 import type React from "react";
 // import { SearchForm } from "~/components/search-form";
 import {
@@ -23,6 +23,7 @@ import {
 } from "~/components/ui/sidebar";
 import { api } from "~/convex/_generated/api";
 import { Doc } from "~/convex/_generated/dataModel";
+import { Button } from "./ui/button";
 
 type Chat = Doc<"chats">;
 
@@ -110,22 +111,78 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   );
 }
 
-export interface AppSidebarMenuButtonProps<
-  TRouter extends RegisteredRouter = RegisteredRouter,
-  TOptions = unknown,
-> {
-  title: string;
-  linkOptions: ValidateLinkOptions<TRouter, TOptions>;
-}
+function AppSidebarChatMenuButton({ chat }: { chat: Chat }): React.ReactNode {
+  const pinChatMutation = useMutation({
+    mutationFn: useConvexMutation(api.chats.togglePinChat).withOptimisticUpdate(
+      (localStore, args) => {
+        const currentValue = localStore.getQuery(api.chats.my);
 
-function AppSidebarMenuButton<TRouter extends RegisteredRouter, TOptions>(
-  props: AppSidebarMenuButtonProps<TRouter, TOptions>,
-): React.ReactNode {
+        if (currentValue) {
+          localStore.setQuery(
+            api.chats.my,
+            {},
+            currentValue.map((c) =>
+              c._id === args.id ? { ...c, pinned: !c.pinned } : c,
+            ),
+          );
+        }
+      },
+    ),
+  });
+
+  const deleteChatMutation = useMutation({
+    mutationFn: useConvexMutation(api.chats.deleteChat).withOptimisticUpdate(
+      (localStore, args) => {
+        const currentValue = localStore.getQuery(api.chats.my);
+
+        if (currentValue) {
+          localStore.setQuery(
+            api.chats.my,
+            {},
+            currentValue.filter((c) => c._id !== args.id),
+          );
+        }
+
+        const byIdValue = localStore.getQuery(api.chats.byId, { id: args.id });
+
+        if (byIdValue) {
+          localStore.setQuery(api.chats.byId, { id: args.id }, null);
+        }
+      },
+    ),
+  });
+
   return (
-    <SidebarMenuItem>
+    <SidebarMenuItem className="relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
       <SidebarMenuButton asChild>
-        <Link {...props.linkOptions}>{props.title}</Link>
+        <Link
+          to="/chat/$chatId"
+          params={{ chatId: chat.id }}
+          activeProps={{
+            "data-active": "true",
+          }}
+        >
+          {chat.name}
+        </Link>
       </SidebarMenuButton>
+      <div className="absolute right-0 inset-y-0 items-center hidden group-hover/menu-item:flex h-full">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-full aspect-square hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
+          onClick={() => pinChatMutation.mutate({ id: chat._id })}
+        >
+          {chat.pinned ? <PinOffIcon /> : <PinIcon />}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-full aspect-square hover:bg-destructive hover:text-destructive-foreground"
+          onClick={() => deleteChatMutation.mutate({ id: chat._id })}
+        >
+          <TrashIcon />
+        </Button>
+      </div>
     </SidebarMenuItem>
   );
 }
@@ -142,18 +199,8 @@ function AppSidebarChatGroup({
       <SidebarGroupLabel className="text-primary">{title}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {chats.map((item, i) => (
-            <AppSidebarMenuButton
-              title={item.name}
-              linkOptions={{
-                to: "/chat/$chatId",
-                params: { chatId: item.id },
-                activeProps: {
-                  "data-active": "true",
-                },
-              }}
-              key={i}
-            />
+          {chats.map((chat, i) => (
+            <AppSidebarChatMenuButton chat={chat} key={i} />
           ))}
         </SidebarMenu>
       </SidebarGroupContent>
