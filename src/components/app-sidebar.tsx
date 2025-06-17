@@ -153,7 +153,7 @@ function AppSidebarChatMenuButton({ chat }: { chat: Chat }): React.ReactNode {
   });
 
   return (
-    <SidebarMenuItem className="relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+    <SidebarMenuItem className="relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-sidebar-accent dark:hover:text-sidebar-accent-foreground">
       <SidebarMenuButton asChild>
         <Link
           to="/chat/$chatId"
@@ -169,7 +169,7 @@ function AppSidebarChatMenuButton({ chat }: { chat: Chat }): React.ReactNode {
         <Button
           variant="ghost"
           size="icon"
-          className="h-full aspect-square hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
+          className="h-full aspect-square hover:bg-sidebar-primary hover:text-sidebar-primary-foreground dark:hover:bg-sidebar-primary dark:hover:text-sidebar-primary-foreground"
           onClick={() => pinChatMutation.mutate({ id: chat._id })}
         >
           {chat.pinned ? <PinOffIcon /> : <PinIcon />}
@@ -177,7 +177,7 @@ function AppSidebarChatMenuButton({ chat }: { chat: Chat }): React.ReactNode {
         <Button
           variant="ghost"
           size="icon"
-          className="h-full aspect-square hover:bg-destructive hover:text-destructive-foreground"
+          className="h-full aspect-square hover:bg-destructive hover:text-destructive-foreground dark:hover:bg-destructive dark:hover:text-destructive-foreground"
           onClick={() => deleteChatMutation.mutate({ id: chat._id })}
         >
           <TrashIcon />
