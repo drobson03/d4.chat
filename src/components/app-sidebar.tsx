@@ -150,8 +150,11 @@ function AppSidebarChatMenuButton({ chat }: { chat: Chat }): React.ReactNode {
   });
 
   return (
-    <SidebarMenuItem className="relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-sidebar-accent dark:hover:text-sidebar-accent-foreground">
-      <SidebarMenuButton asChild>
+    <SidebarMenuItem className="relative">
+      <SidebarMenuButton
+        className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-sidebar-accent dark:hover:text-sidebar-accent-foreground"
+        asChild
+      >
         <Link
           to="/chat/$chatId"
           params={{ chatId: chat.id }}
@@ -166,7 +169,7 @@ function AppSidebarChatMenuButton({ chat }: { chat: Chat }): React.ReactNode {
         <Button
           variant="ghost"
           size="icon"
-          className="h-full aspect-square hover:bg-sidebar-primary hover:text-sidebar-primary-foreground dark:hover:bg-sidebar-primary dark:hover:text-sidebar-primary-foreground"
+          className="h-full aspect-square hover:bg-sidebar-primary hover:text-sidebar-primary-foreground dark:hover:bg-sidebar-primary dark:hover:text-sidebar-primary-foreground rounded-none"
           onClick={() => pinChatMutation.mutate({ id: chat._id })}
         >
           {chat.pinned ? <PinOffIcon /> : <PinIcon />}
@@ -174,7 +177,7 @@ function AppSidebarChatMenuButton({ chat }: { chat: Chat }): React.ReactNode {
         <Button
           variant="ghost"
           size="icon"
-          className="h-full aspect-square hover:bg-destructive hover:text-destructive-foreground dark:hover:bg-destructive dark:hover:text-destructive-foreground"
+          className="h-full aspect-square hover:bg-destructive hover:text-destructive-foreground dark:hover:bg-destructive dark:hover:text-destructive-foreground rounded-l-none"
           onClick={() => deleteChatMutation.mutate({ id: chat._id })}
         >
           <TrashIcon />
