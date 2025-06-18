@@ -21,16 +21,25 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       ),
       Effect.zip(ConvexHttpClient),
       // TODO: fix auth
-      Effect.andThen(([{ messages, model, id }, convex]) =>
+      Effect.andThen(([{ messages, model, id, reasoning, search }, convex]) =>
         pipe(
           Effect.try(() => convertToModelMessages(messages)),
           Effect.andThen((messages) =>
             Effect.try({
               try: () =>
                 streamText({
-                  model: openrouter(model),
+                  model: openrouter(model + (search ? ":online" : "")),
                   system: "You are a helpful assistant.",
                   messages,
+                  providerOptions: {
+                    openrouter: {
+                      reasoning: reasoning
+                        ? {
+                            effort: reasoning,
+                          }
+                        : { enabled: false },
+                    },
+                  },
                   experimental_transform: smoothStream({ chunking: "word" }),
                 }),
               catch: (error) => new ChatGenerationError({ cause: error }),

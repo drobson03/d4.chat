@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouteContext } from "@tanstack/react-router";
 import {
   AlertTriangleIcon,
+  BrainIcon,
   ChevronRightIcon,
   GlobeIcon,
   Loader2Icon,
@@ -11,7 +12,7 @@ import {
   SendIcon,
 } from "lucide-react";
 import { nanoid } from "nanoid";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Markdown from "react-markdown";
 import TextareaAutosize from "react-textarea-autosize";
 import { Button } from "~/components/ui/button";
@@ -116,6 +117,15 @@ export function Chat({
   const { data: models } = useQuery(getOpenRouterModelsQueryOptions);
 
   const [model, setModel] = useState(models?.at(0)?.id ?? "qwen/qwen3-8b:free");
+  const currentModel = useMemo(
+    () => models?.find((m) => m.id === model),
+    [model, models],
+  );
+
+  const [reasoning, setReasoning] = useState<
+    "none" | "low" | "medium" | "high"
+  >("none");
+  const [search, setSearch] = useState(false);
 
   const {
     messages,
@@ -163,6 +173,12 @@ export function Chat({
     sendMessage(newMessage, {
       body: {
         model,
+        reasoning:
+          reasoning === "none" ||
+          !(currentModel?.supported_parameters ?? []).includes("reasoning")
+            ? undefined
+            : reasoning,
+        search,
       },
     });
 
@@ -271,7 +287,38 @@ export function Chat({
                 ))}
               </SelectContent>
             </Select>
-            <Toggle aria-label="Enable search" variant="outline">
+            {(currentModel?.supported_parameters ?? []).includes(
+              "reasoning",
+            ) ? (
+              <Select
+                value={reasoning}
+                onValueChange={(value) =>
+                  setReasoning(value as "none" | "low" | "medium" | "high")
+                }
+              >
+                <SelectTrigger className="max-w-min capitalize">
+                  <BrainIcon />
+                  <SelectValue placeholder="Reasoning" className="capitalize" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["high", "medium", "low", "none"].map((effort) => (
+                    <SelectItem
+                      key={effort}
+                      value={effort}
+                      className="capitalize"
+                    >
+                      {effort}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            <Toggle
+              aria-label="Enable search"
+              variant="outline"
+              pressed={search}
+              onPressedChange={() => setSearch(!search)}
+            >
               <GlobeIcon className="size-4" />
               Search
             </Toggle>

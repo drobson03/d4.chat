@@ -54,6 +54,8 @@ const UIMessagePartSchema = Schema.Union(
   StepStartUIPartSchema,
 );
 
+const ReasoningEffortSchema = Schema.Literal("low", "medium", "high");
+
 const UIMessageSchema = Schema.Struct({
   id: Schema.String,
   role: Schema.Union(
@@ -65,6 +67,7 @@ const UIMessageSchema = Schema.Struct({
     Schema.Struct({
       user: Schema.optional(Schema.NonEmptyString),
       model: Schema.NonEmptyString,
+      reasoning: Schema.optional(ReasoningEffortSchema),
     }),
   ),
   parts: Schema.mutable(Schema.Array(UIMessagePartSchema)),
@@ -83,4 +86,6 @@ export const ChatRequestBodySchema = Schema.Struct({
     Schema.filter((model) => model.endsWith(":free")),
   ),
   messages: MessagesSchema,
+  reasoning: Schema.optional(ReasoningEffortSchema),
+  search: Schema.optional(Schema.Boolean),
 });
