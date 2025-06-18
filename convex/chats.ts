@@ -1,7 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { UIMessage } from "./schema";
-import { Id } from "./_generated/dataModel";
+import { Message } from "./schema";
 
 export const my = query({
   handler: async (ctx) => {
@@ -30,30 +29,19 @@ export const byId = query({
       return null;
     }
 
-    const chat = await ctx.db
+    return await ctx.db
       .query("chats")
       .withIndex("by_user", (q) => q.eq("user", user.tokenIdentifier))
       .filter((q) => q.eq(q.field("id"), args.id))
       .unique();
-
-    if (!chat) {
-      return null;
-    }
-
-    const messages = await ctx.db
-      .query("messages")
-      .withIndex("by_chat", (q) => q.eq("chat", chat._id))
-      .collect();
-
-    return { ...chat, messages };
   },
 });
 
-export const appendMessagesToChat = mutation({
+export const setChatMessages = mutation({
   args: {
     id: v.string(),
     model: v.string(),
-    messages: v.array(UIMessage),
+    messages: v.array(Message),
   },
   handler: async (ctx, args) => {
     const user = await ctx.auth.getUserIdentity();
@@ -77,16 +65,20 @@ export const appendMessagesToChat = mutation({
         pinned: false,
         updatedAt: Date.now(),
         user: user.tokenIdentifier,
+        messages: [],
       }));
 
-    for (const message of args.messages) {
-      await ctx.db.insert("messages", {
-        ...message,
-        chat: chatId,
-        model: args.model,
-        user: user.tokenIdentifier,
-      });
-    }
+    await ctx.db.patch(chatId, {
+      messages: [
+        ...(chat?.messages ?? []),
+        ...args.messages.slice(chat?.messages?.length ?? 0).map((message) => ({
+          message,
+          meta: {
+            model: args.model,
+          },
+        })),
+      ],
+    });
 
     return chatId;
   },

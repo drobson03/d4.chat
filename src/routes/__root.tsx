@@ -14,6 +14,7 @@ import { fetchClerkAuth } from "~/lib/server/auth";
 import styles from "~/styles/app.css?url";
 import { ClerkProvider, useAuth } from "@clerk/tanstack-react-start";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
@@ -66,13 +67,15 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>
       <body>
         {children}
         <TanStackRouterDevtools position="bottom-right" />
+
+        <ReactQueryDevtools initialIsOpen={false} />
         <Scripts />
       </body>
     </html>

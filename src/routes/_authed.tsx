@@ -18,6 +18,7 @@ export const Route = createFileRoute("/_authed")({
 
     return {
       userId: context.userId,
+      token: context.token!,
     };
   },
   loader: ({ context }) => {

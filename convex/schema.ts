@@ -1,85 +1,122 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
-const TextUIPart = v.object({
-  type: v.literal("text"),
+const TextPart = v.object({
   text: v.string(),
+  _tag: v.literal("TextPart"),
 });
 
-const ReasoningUIPart = v.object({
-  type: v.literal("reasoning"),
-  reasoning: v.string(),
+const ImagePart = v.object({
+  data: v.string(),
+  mediaType: v.optional(v.string()),
+  _tag: v.literal("ImagePart"),
 });
 
-const ToolInvocation = v.union(
-  v.object({
-    state: v.literal("partial-call"),
-    toolCallId: v.string(),
-    toolName: v.string(),
-    args: v.any(),
-  }),
-  v.object({
-    state: v.literal("call"),
-    toolCallId: v.string(),
-    toolName: v.string(),
-    args: v.any(),
-  }),
-  v.object({
-    state: v.literal("result"),
-    toolCallId: v.string(),
-    toolName: v.string(),
-    args: v.any(),
-    result: v.any(),
-  }),
+const ImageUrlPart = v.object({
+  url: v.string(),
+  _tag: v.literal("ImageUrlPart"),
+});
+
+const FilePart = v.object({
+  data: v.string(),
+  name: v.optional(v.string()),
+  mediaType: v.optional(v.string()),
+  _tag: v.literal("FilePart"),
+});
+
+const FileUrlPart = v.object({
+  url: v.string(),
+  _tag: v.literal("FileUrlPart"),
+});
+
+const ReasoningPart = v.object({
+  reasoningText: v.string(),
+  signature: v.optional(v.string()),
+  _tag: v.literal("ReasoningPart"),
+});
+
+const RedactedReasoningPart = v.object({
+  redactedText: v.string(),
+  _tag: v.literal("RedactedReasoningPart"),
+});
+
+const ToolCallPart = v.object({
+  id: v.string(),
+  name: v.string(),
+  params: v.any(),
+  _tag: v.literal("ToolCallPart"),
+});
+
+const ToolCallResultPart = v.object({
+  id: v.string(),
+  result: v.any(),
+  _tag: v.literal("ToolCallResultPart"),
+});
+
+// const Usage = v.object({
+//   inputTokens: v.number(),
+//   outputTokens: v.number(),
+//   totalTokens: v.number(),
+//   reasoningTokens: v.number(),
+//   cacheReadInputTokens: v.number(),
+//   cacheWriteInputTokens: v.number(),
+// });
+
+// const FinishReason = v.union(
+//   v.literal("stop"),
+//   v.literal("length"),
+//   v.literal("content-filter"),
+//   v.literal("tool-calls"),
+//   v.literal("error"),
+//   v.literal("other"),
+//   v.literal("unknown"),
+// );
+
+// const FinishPart = v.object({
+//   usage: Usage,
+//   finishReason: FinishReason,
+//   providerMetadata: v.optional(
+//     v.record(v.string(), v.record(v.string(), v.any())),
+//   ),
+//   _tag: v.literal("FinishPart"),
+// });
+
+const UserMessagePart = v.union(
+  TextPart,
+  ImagePart,
+  ImageUrlPart,
+  FilePart,
+  FileUrlPart,
+  ReasoningPart,
+  RedactedReasoningPart,
 );
 
-const ToolInvocationUIPart = v.object({
-  type: v.literal("tool-invocation"),
-  toolInvocation: ToolInvocation,
+const AssistantMessagePart = v.union(
+  TextPart,
+  ReasoningPart,
+  RedactedReasoningPart,
+  ToolCallPart,
+);
+
+const ToolMessagePart = ToolCallResultPart;
+
+const UserMessage = v.object({
+  parts: v.array(UserMessagePart),
+  userName: v.optional(v.string()),
+  _tag: v.literal("UserMessage"),
 });
 
-const Source = v.object({
-  sourceType: v.literal("url"),
-  id: v.string(),
-  url: v.string(),
-  title: v.optional(v.string()),
+const AssistantMessage = v.object({
+  parts: v.array(AssistantMessagePart),
+  _tag: v.literal("AssistantMessage"),
 });
 
-const SourceUIPart = v.object({
-  type: v.literal("source"),
-  source: Source,
+const ToolMessage = v.object({
+  parts: v.array(ToolMessagePart),
+  _tag: v.literal("ToolMessage"),
 });
 
-const StepStartUIPart = v.object({
-  type: v.literal("step-start"),
-});
-
-const Attachment = v.object({
-  name: v.optional(v.string()),
-  contentType: v.optional(v.string()),
-  url: v.string(),
-});
-
-export const UIMessage = v.object({
-  role: v.union(
-    v.literal("system"),
-    v.literal("user"),
-    v.literal("assistant"),
-    v.literal("data"),
-  ),
-  createdAt: v.optional(v.number()),
-  annotations: v.optional(v.array(v.any())),
-  parts: v.array(
-    v.union(
-      TextUIPart,
-      ReasoningUIPart,
-      ToolInvocationUIPart,
-      SourceUIPart,
-      StepStartUIPart,
-    ),
-  ),
-  experimental_attachements: v.optional(v.array(Attachment)),
-});
+export const Message = v.union(UserMessage, AssistantMessage, ToolMessage);
 
 const schema = defineSchema({
   chats: defineTable({
@@ -89,16 +126,17 @@ const schema = defineSchema({
     updatedAt: v.number(),
     model: v.string(),
     branchedFrom: v.optional(v.id("chats")),
+    messages: v.array(
+      v.object({
+        message: Message,
+        meta: v.object({
+          model: v.optional(v.string()),
+          user: v.optional(v.string()),
+        }),
+      }),
+    ),
     user: v.string(),
   }).index("by_user", ["user"]),
-  messages: defineTable({
-    ...UIMessage.fields,
-    model: v.optional(v.string()),
-    chat: v.id("chats"),
-    user: v.optional(v.string()),
-  })
-    .index("by_chat", ["chat"])
-    .index("by_user", ["user"]),
 });
 
 export default schema;

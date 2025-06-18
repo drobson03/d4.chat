@@ -32,7 +32,7 @@ export function createEffectApiHandler<E extends Error | unknown>(
     const runtime = createApiRuntime(request);
 
     const effectWithFallback = effect.pipe(
-      Effect.catchAll((error) => {
+      Effect.catchAll((error) =>
         Console.error(
           "[Effect via Services] Execution failed:",
           Cause.isCause(error)
@@ -40,12 +40,10 @@ export function createEffectApiHandler<E extends Error | unknown>(
             : error instanceof Error
               ? error.message
               : error,
-        );
-
-        return Effect.succeed(
-          new Response("Internal Server Error", { status: 500 }),
-        );
-      }),
+        ).pipe(
+          Effect.as(new Response("Internal Server Error", { status: 500 })),
+        ),
+      ),
     );
 
     return await runtime.runPromise(effectWithFallback);

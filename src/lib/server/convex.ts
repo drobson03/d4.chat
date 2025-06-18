@@ -1,6 +1,6 @@
 import { Config, Effect, Option, pipe } from "effect";
 import { ConvexHttpClient as BrowserConvexHttpClient } from "convex/browser";
-import { RequestTag } from "./api-runtime";
+import { RequestTag } from "./api/runtime";
 import { getAuth } from "@clerk/tanstack-react-start/server";
 
 export class ConvexConfig extends Effect.Service<ConvexConfig>()(
