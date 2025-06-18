@@ -117,7 +117,7 @@ export function Chat({
 
   const { data: models } = useQuery(getOpenRouterModelsQueryOptions);
 
-  const [model, setModel] = useState(models?.at(0)?.id ?? "qwen/qwen3-8b:free");
+  const [model, setModel] = useState("qwen/qwen3-8b:free");
   const currentModel = useMemo(
     () => models?.find((m) => m.id === model),
     [model, models],

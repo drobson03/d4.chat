@@ -3,7 +3,7 @@ import { convexQuery } from "@convex-dev/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { nanoid } from "nanoid";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Chat } from "~/components/chat";
 import { api } from "~/convex/_generated/api";
 import { getOpenRouterModelsQueryOptions } from "~/lib/models";
@@ -49,22 +49,30 @@ export const Route = createFileRoute("/_authed/chat/$")({
 });
 
 function RouteComponent() {
-  const newId = useMemo(() => nanoid(), []);
+  const navigate = Route.useNavigate();
 
   const { _splat } = Route.useParams({
     select: (params) => ({
-      _splat: !params._splat ? newId : params._splat!,
+      _splat: params._splat,
     }),
   });
 
+  const chatId = useMemo(() => (!_splat ? nanoid() : _splat), [_splat]);
+
   const { data: chat } = useQuery(
-    convexQuery(api.chats.byId, _splat ? { id: _splat } : "skip"),
+    convexQuery(api.chats.byId, chatId ? { id: chatId } : "skip"),
   );
+
+  useEffect(() => {
+    if (_splat && _splat.length > 0 && !chat) {
+      navigate({ to: ".", params: { _splat: "" } });
+    }
+  }, [_splat, chat, navigate]);
 
   return (
     <Chat
-      key={_splat}
-      chatId={_splat}
+      key={chatId}
+      chatId={chatId}
       initialMessages={
         chat?.messages as UIMessageWithMetadata[] | undefined satisfies
           | UIMessageWithMetadata[]
