@@ -1,4 +1,3 @@
-import { useUser } from "@clerk/tanstack-react-start";
 import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -9,6 +8,7 @@ import type React from "react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -19,6 +19,7 @@ import {
 } from "~/components/ui/sidebar";
 import { api } from "~/convex/_generated/api";
 import type { Doc } from "~/convex/_generated/dataModel";
+import { SidebarUser } from "./sidebar-user";
 import { Button } from "./ui/button";
 
 type Chat = Doc<"chats">;
@@ -59,15 +60,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       ),
   });
 
-  const { user } = useUser();
-
   return (
     <Sidebar {...props}>
       <SidebarHeader>
         <Link className="mx-auto text-lg font-bold tracking-wide" to="/chat">
           d4
         </Link>
-        <p>{user?.fullName}</p>
         {/* <SearchForm /> */}
       </SidebarHeader>
       <SidebarContent>
@@ -103,6 +101,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <AppSidebarChatGroup title="Older" chats={chats.older} />
         ) : null}
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarUser />
+      </SidebarFooter>
     </Sidebar>
   );
 }
