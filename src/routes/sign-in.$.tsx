@@ -12,7 +12,7 @@ export const Route = createFileRoute("/sign-in/$")({
 
 function RouteComponent() {
   return (
-    <main>
+    <main className="flex min-h-dvh min-w-dvw items-center justify-center">
       <SignIn />
     </main>
   );

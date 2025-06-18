@@ -66,11 +66,11 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="min-h-dvh min-w-dvw">
         {children}
         <TanStackRouterDevtools position="bottom-right" />
         <Scripts />
