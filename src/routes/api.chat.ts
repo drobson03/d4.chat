@@ -1,9 +1,9 @@
+import { openrouter } from "@openrouter/ai-sdk-provider";
 import { createServerFileRoute } from "@tanstack/react-start/server";
 import { convertToModelMessages, smoothStream, streamText } from "ai";
 import { Effect, pipe, Schema } from "effect";
 import { api } from "~/convex/_generated/api";
 import { ChatGenerationError } from "~/lib/server/ai/error";
-import { openrouter } from "@openrouter/ai-sdk-provider";
 import { createEffectApiHandler, RequestTag } from "~/lib/server/api-runtime";
 import { ConvexConfig, ConvexHttpClient } from "~/lib/server/convex";
 import {

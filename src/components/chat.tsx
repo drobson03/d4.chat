@@ -10,6 +10,7 @@ import {
   Loader2Icon,
   RefreshCcwIcon,
   SendIcon,
+  SquareIcon,
 } from "lucide-react";
 import { nanoid } from "nanoid";
 import { useMemo, useState } from "react";
@@ -134,11 +135,11 @@ export function Chat({
     error,
     reload,
     id: internalId,
+    stop,
   } = useChat({
-    id: chatId,
+    id: chatId === "" ? undefined : chatId,
     generateId: () => nanoid(),
-    messages: (initialMessages ??
-      []) as UIMessageWithMetadata[] satisfies UIMessageWithMetadata[],
+    messages: initialMessages,
   });
 
   function handleSubmit(
@@ -186,6 +187,7 @@ export function Chat({
       from: "/chat/$",
       to: "/chat/$",
       params: { _splat: internalId },
+      replace: true,
     });
   }
 
@@ -193,44 +195,7 @@ export function Chat({
     <>
       <div className="absolute inset-0 flex w-full flex-col gap-4 overflow-y-scroll px-[30%] mt-4 mb-48">
         {messages.map((message) => (
-          <div
-            key={message.id}
-            className="data-[role=user]:bg-card group flex flex-col gap-2 rounded p-4 data-[role=user]:ml-auto data-[role=user]:w-4/5 data-[role=user]:border"
-            data-role={message.role}
-          >
-            {message.parts.some((part) => part.type === "reasoning") ? (
-              <Collapsible className="flex flex-col gap-2">
-                <CollapsibleTrigger className="group flex items-center gap-1">
-                  <ChevronRightIcon className="size-4 transition-transform group-data-[state=open]:rotate-90" />
-                  Reasoning
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="prose bg-accent text-accent-foreground rounded p-4 space-y-2 dark:prose-invert">
-                    <Markdown>
-                      {message.parts
-                        .filter((part) => part.type === "reasoning")
-                        .map((part) => part.text)
-                        .join("\n")
-                        .replaceAll("\\n", "")
-                        .trim()}
-                    </Markdown>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            ) : null}
-            <div className="prose dark:prose-invert">
-              <Markdown>
-                {message.parts.find((part) => part.type === "text")?.text ?? ""}
-              </Markdown>
-            </div>
-            {message.metadata?.model && message.role !== "user" && (
-              <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                <span className="text-muted-foreground text-sm">
-                  {message.metadata?.model}
-                </span>
-              </div>
-            )}
-          </div>
+          <Message key={message.id} message={message} />
         ))}
         {error ? (
           <div className="flex items-center gap-2 px-4">
@@ -322,17 +287,99 @@ export function Chat({
               <GlobeIcon className="size-4" />
               Search
             </Toggle>
-            <Button
-              type="submit"
-              aria-label="Send message"
-              size="icon"
-              className="ml-auto"
-            >
-              <SendIcon fill="currentColor" />
-            </Button>
+            {status === "submitted" || status === "streaming" ? (
+              <Button
+                aria-label="Stop"
+                variant="outline"
+                size="icon"
+                className="ml-auto"
+                onClick={(e) => {
+                  e.preventDefault();
+                  void stop();
+                }}
+                type="button"
+              >
+                <SquareIcon className="size-4 fill-current stroke-current" />
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                aria-label="Send message"
+                size="icon"
+                className="ml-auto"
+              >
+                <SendIcon fill="currentColor" />
+              </Button>
+            )}
           </div>
         </form>
       </div>
     </>
+  );
+}
+
+function MessageReasoning({ message }: { message: UIMessageWithMetadata }) {
+  const reasoningParts = useMemo(
+    () => message.parts.filter((part) => part.type === "reasoning"),
+    [message.parts],
+  );
+  const reasoning = useMemo(
+    () =>
+      reasoningParts
+        .map((part) => part.text)
+        .join("\n")
+        .replaceAll("\\n", "")
+        .trim(),
+    [reasoningParts],
+  );
+
+  return reasoningParts.length > 0 ? (
+    <Collapsible className="flex flex-col gap-2">
+      <CollapsibleTrigger className="group flex items-center gap-1">
+        <ChevronRightIcon className="size-4 transition-transform group-data-[state=open]:rotate-90" />
+        Reasoning
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="prose bg-accent text-accent-foreground rounded p-4 space-y-2 dark:prose-invert">
+          <Markdown>{reasoning}</Markdown>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  ) : null;
+}
+
+function Message({ message }: { message: UIMessageWithMetadata }) {
+  const textParts = useMemo(
+    () => message.parts.filter((part) => part.type === "text"),
+    [message.parts],
+  );
+
+  const text = useMemo(
+    () =>
+      textParts
+        .map((part) => part.text)
+        .join("")
+        .replaceAll("\\n", "")
+        .trim(),
+    [textParts],
+  );
+
+  return (
+    <div
+      className="data-[role=user]:bg-card group flex flex-col gap-2 rounded p-4 data-[role=user]:ml-auto data-[role=user]:w-4/5 data-[role=user]:border"
+      data-role={message.role}
+    >
+      <MessageReasoning message={message} />
+      <div className="prose dark:prose-invert">
+        <Markdown>{text}</Markdown>
+      </div>
+      {message.metadata?.model && message.role !== "user" && (
+        <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="text-muted-foreground text-sm">
+            {message.metadata?.model}
+          </span>
+        </div>
+      )}
+    </div>
   );
 }
