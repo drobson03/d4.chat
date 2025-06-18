@@ -1,5 +1,11 @@
 # d4.chat
 
+## Deploying
+
+Setup Convex & Clerk environments.
+
+Copy `.env.example` to `.env` and fill in the values from Clerk & Convex.
+
 ## Time Tracking
 
 So this ran during my entire exam period, had to do at the end of the day after studying:
