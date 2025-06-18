@@ -4,9 +4,12 @@
 
 So this ran during my entire exam period, had to do at the end of the day after studying:
 
-| Day | Time      |
-| --- | --------- |
-| 1   | 2 hours   |
-| 2   | 1 hour    |
-| 3   | 1.3 hours |
-| 4   | 3 hours   |
+| Day   | Hours |
+| ----- | ----- |
+| 1     | 2     |
+| 2     | 1     |
+| 3     | 1.3   |
+| 4     | 3     |
+| 5/8   | 5.1   |
+| 6/9   | 9     |
+| Total | 21.4  |
