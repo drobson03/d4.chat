@@ -1,5 +1,4 @@
 import { Schema } from "effect";
-import { ModelSchema } from "../server/models";
 
 const TextUIPartSchema = Schema.Struct({
   type: Schema.Literal("text"),
@@ -8,78 +7,70 @@ const TextUIPartSchema = Schema.Struct({
 
 const ReasoningUIPartSchema = Schema.Struct({
   type: Schema.Literal("reasoning"),
-  reasoning: Schema.String,
+  text: Schema.String,
+  providerMetadata: Schema.optional(
+    Schema.Record({ key: Schema.String, value: Schema.Unknown }),
+  ),
 });
 
-const ToolInvocationSchema = Schema.Union(
-  Schema.Struct({
-    state: Schema.Literal("partial-call"),
-    toolCallId: Schema.String,
-    toolName: Schema.String,
-    args: Schema.Unknown,
-  }),
-  Schema.Struct({
-    state: Schema.Literal("call"),
-    toolCallId: Schema.String,
-    toolName: Schema.String,
-    args: Schema.Unknown,
-  }),
-  Schema.Struct({
-    state: Schema.Literal("result"),
-    toolCallId: Schema.String,
-    toolName: Schema.String,
-    args: Schema.Unknown,
-    result: Schema.Unknown,
-  }),
-);
-
-const ToolInvocationUIPartSchema = Schema.Struct({
-  type: Schema.Literal("tool-invocation"),
-  toolInvocation: ToolInvocationSchema,
-});
-
-const SourceSchema = Schema.Struct({
-  sourceType: Schema.Literal("url"),
-  id: Schema.String,
+const SourceUrlUIPartSchema = Schema.Struct({
+  type: Schema.Literal("source-url"),
+  sourceId: Schema.String,
   url: Schema.String,
   title: Schema.optional(Schema.String),
+  providerMetadata: Schema.optional(
+    Schema.Record({ key: Schema.String, value: Schema.Unknown }),
+  ),
 });
 
-const SourceUIPartSchema = Schema.Struct({
-  type: Schema.Literal("source"),
-  source: SourceSchema,
+const SourceDocumentUIPartSchema = Schema.Struct({
+  type: Schema.Literal("source-document"),
+  sourceId: Schema.String,
+  mediaType: Schema.String,
+  title: Schema.String,
+  filename: Schema.optional(Schema.String),
+  providerMetadata: Schema.optional(
+    Schema.Record({ key: Schema.String, value: Schema.Unknown }),
+  ),
+});
+
+const FileUIPartSchema = Schema.Struct({
+  type: Schema.Literal("file"),
+  mediaType: Schema.String,
+  filename: Schema.optional(Schema.String),
+  url: Schema.String,
 });
 
 const StepStartUIPartSchema = Schema.Struct({
   type: Schema.Literal("step-start"),
 });
 
-const AttachmentSchema = Schema.Struct({
-  name: Schema.optional(Schema.String),
-  contentType: Schema.optional(Schema.String),
-  url: Schema.String,
-});
+const UIMessagePartSchema = Schema.Union(
+  TextUIPartSchema,
+  ReasoningUIPartSchema,
+  SourceUrlUIPartSchema,
+  SourceDocumentUIPartSchema,
+  FileUIPartSchema,
+  StepStartUIPartSchema,
+);
 
 const UIMessageSchema = Schema.Struct({
+  id: Schema.String,
   role: Schema.Union(
     Schema.Literal("system"),
     Schema.Literal("user"),
     Schema.Literal("assistant"),
-    Schema.Literal("data"),
   ),
-  createdAt: Schema.optional(Schema.Number),
-  annotations: Schema.optional(Schema.Array(Schema.Unknown)),
-  parts: Schema.Array(
-    Schema.Union(
-      TextUIPartSchema,
-      ReasoningUIPartSchema,
-      ToolInvocationUIPartSchema,
-      SourceUIPartSchema,
-      StepStartUIPartSchema,
-    ),
+  metadata: Schema.optional(
+    Schema.Struct({
+      user: Schema.optional(Schema.NonEmptyString),
+      model: Schema.NonEmptyString,
+    }),
   ),
-  experimental_attachements: Schema.optional(Schema.Array(AttachmentSchema)),
+  parts: Schema.mutable(Schema.Array(UIMessagePartSchema)),
 });
+
+export const MessagesSchema = Schema.mutable(Schema.Array(UIMessageSchema));
 
 /**
  * [Nano ID](https://github.com/ai/nanoid) regex.
@@ -87,7 +78,9 @@ const UIMessageSchema = Schema.Struct({
 export const NANO_ID_REGEX: RegExp = /^[\w-]+$/u;
 
 export const ChatRequestBodySchema = Schema.Struct({
-  chatId: Schema.String.pipe(Schema.pattern(NANO_ID_REGEX)),
-  model: ModelSchema,
-  messages: Schema.Array(UIMessageSchema),
+  id: Schema.NonEmptyString.pipe(Schema.pattern(NANO_ID_REGEX)),
+  model: Schema.NonEmptyString.pipe(
+    Schema.filter((model) => model.endsWith(":free")),
+  ),
+  messages: MessagesSchema,
 });

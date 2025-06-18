@@ -15,8 +15,7 @@ import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as AuthedIndexRouteImport } from './routes/_authed.index'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
 import { Route as AuthedChatRouteImport } from './routes/_authed.chat'
-import { Route as AuthedChatIndexRouteImport } from './routes/_authed.chat.index'
-import { Route as AuthedChatChatIdRouteImport } from './routes/_authed.chat.$chatId'
+import { Route as AuthedChatSplatRouteImport } from './routes/_authed.chat.$'
 import { ServerRoute as ApiChatServerRouteImport } from './routes/api.chat'
 
 const rootServerRouteImport = createServerRootRoute()
@@ -40,14 +39,9 @@ const AuthedChatRoute = AuthedChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AuthedRoute,
 } as any)
-const AuthedChatIndexRoute = AuthedChatIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthedChatRoute,
-} as any)
-const AuthedChatChatIdRoute = AuthedChatChatIdRouteImport.update({
-  id: '/$chatId',
-  path: '/$chatId',
+const AuthedChatSplatRoute = AuthedChatSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
   getParentRoute: () => AuthedChatRoute,
 } as any)
 const ApiChatServerRoute = ApiChatServerRouteImport.update({
@@ -60,14 +54,13 @@ export interface FileRoutesByFullPath {
   '/chat': typeof AuthedChatRouteWithChildren
   '/sign-in/$': typeof SignInSplatRoute
   '/': typeof AuthedIndexRoute
-  '/chat/$chatId': typeof AuthedChatChatIdRoute
-  '/chat/': typeof AuthedChatIndexRoute
+  '/chat/$': typeof AuthedChatSplatRoute
 }
 export interface FileRoutesByTo {
+  '/chat': typeof AuthedChatRouteWithChildren
   '/sign-in/$': typeof SignInSplatRoute
   '/': typeof AuthedIndexRoute
-  '/chat/$chatId': typeof AuthedChatChatIdRoute
-  '/chat': typeof AuthedChatIndexRoute
+  '/chat/$': typeof AuthedChatSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -75,22 +68,20 @@ export interface FileRoutesById {
   '/_authed/chat': typeof AuthedChatRouteWithChildren
   '/sign-in/$': typeof SignInSplatRoute
   '/_authed/': typeof AuthedIndexRoute
-  '/_authed/chat/$chatId': typeof AuthedChatChatIdRoute
-  '/_authed/chat/': typeof AuthedChatIndexRoute
+  '/_authed/chat/$': typeof AuthedChatSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/chat' | '/sign-in/$' | '/' | '/chat/$chatId' | '/chat/'
+  fullPaths: '/chat' | '/sign-in/$' | '/' | '/chat/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/sign-in/$' | '/' | '/chat/$chatId' | '/chat'
+  to: '/chat' | '/sign-in/$' | '/' | '/chat/$'
   id:
     | '__root__'
     | '/_authed'
     | '/_authed/chat'
     | '/sign-in/$'
     | '/_authed/'
-    | '/_authed/chat/$chatId'
-    | '/_authed/chat/'
+    | '/_authed/chat/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -149,18 +140,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedChatRouteImport
       parentRoute: typeof AuthedRoute
     }
-    '/_authed/chat/': {
-      id: '/_authed/chat/'
-      path: '/'
-      fullPath: '/chat/'
-      preLoaderRoute: typeof AuthedChatIndexRouteImport
-      parentRoute: typeof AuthedChatRoute
-    }
-    '/_authed/chat/$chatId': {
-      id: '/_authed/chat/$chatId'
-      path: '/$chatId'
-      fullPath: '/chat/$chatId'
-      preLoaderRoute: typeof AuthedChatChatIdRouteImport
+    '/_authed/chat/$': {
+      id: '/_authed/chat/$'
+      path: '/$'
+      fullPath: '/chat/$'
+      preLoaderRoute: typeof AuthedChatSplatRouteImport
       parentRoute: typeof AuthedChatRoute
     }
   }
@@ -178,13 +162,11 @@ declare module '@tanstack/react-start/server' {
 }
 
 interface AuthedChatRouteChildren {
-  AuthedChatChatIdRoute: typeof AuthedChatChatIdRoute
-  AuthedChatIndexRoute: typeof AuthedChatIndexRoute
+  AuthedChatSplatRoute: typeof AuthedChatSplatRoute
 }
 
 const AuthedChatRouteChildren: AuthedChatRouteChildren = {
-  AuthedChatChatIdRoute: AuthedChatChatIdRoute,
-  AuthedChatIndexRoute: AuthedChatIndexRoute,
+  AuthedChatSplatRoute: AuthedChatSplatRoute,
 }
 
 const AuthedChatRouteWithChildren = AuthedChatRoute._addFileChildren(

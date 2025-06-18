@@ -152,12 +152,15 @@ function AppSidebarChatMenuButton({ chat }: { chat: Chat }): React.ReactNode {
   return (
     <SidebarMenuItem className="relative">
       <SidebarMenuButton
-        className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-sidebar-accent dark:hover:text-sidebar-accent-foreground"
+        className="group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-primary-foreground dark:group-hover/menu-item:bg-sidebar-accent dark:group-hover/menu-item:text-sidebar-primary-foreground"
         asChild
       >
         <Link
-          to="/chat/$chatId"
-          params={{ chatId: chat.id }}
+          to="/chat/$"
+          params={{ _splat: chat.id }}
+          activeOptions={{
+            exact: true,
+          }}
           activeProps={{
             "data-active": "true",
           }}

@@ -12,16 +12,17 @@ import { api } from "~/convex/_generated/api";
 
 export const Route = createFileRoute("/_authed")({
   beforeLoad: async ({ context }) => {
-    if (!context.userId) {
+    if (!context.userId || !context.token) {
       throw redirect({ to: "/sign-in/$" });
     }
 
     return {
       userId: context.userId,
+      token: context.token!,
     };
   },
-  loader: ({ context }) => {
-    context.queryClient.prefetchQuery(convexQuery(api.chats.my, {}));
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(convexQuery(api.chats.my, {}));
   },
   component: RouteComponent,
 });

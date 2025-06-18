@@ -3,10 +3,13 @@ import { convertToModelMessages, smoothStream, streamText } from "ai";
 import { Effect, pipe, Schema } from "effect";
 import { api } from "~/convex/_generated/api";
 import { ChatGenerationError } from "~/lib/server/ai/error";
+import { openrouter } from "@openrouter/ai-sdk-provider";
 import { createEffectApiHandler, RequestTag } from "~/lib/server/api-runtime";
 import { ConvexConfig, ConvexHttpClient } from "~/lib/server/convex";
-import { models } from "~/lib/server/models";
-import { ChatRequestBodySchema } from "~/lib/validation/chat-request";
+import {
+  ChatRequestBodySchema,
+  MessagesSchema,
+} from "~/lib/validation/chat-request";
 
 export const ServerRoute = createServerFileRoute("/api/chat").methods({
   POST: createEffectApiHandler(
@@ -18,16 +21,14 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       ),
       Effect.zip(ConvexHttpClient),
       // TODO: fix auth
-      Effect.andThen(([{ messages, model, chatId }, convex]) =>
+      Effect.andThen(([{ messages, model, id }, convex]) =>
         pipe(
-          // TODO: fix messages type
-          // biome-ignore lint/suspicious/noExplicitAny: needs fixing
-          Effect.try(() => convertToModelMessages(messages as any)),
+          Effect.try(() => convertToModelMessages(messages)),
           Effect.andThen((messages) =>
             Effect.try({
               try: () =>
                 streamText({
-                  model: models[model],
+                  model: openrouter(model),
                   system: "You are a helpful assistant.",
                   messages,
                   experimental_transform: smoothStream({ chunking: "word" }),
@@ -36,24 +37,27 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
             }),
           ),
           Effect.andThen((stream) =>
-            Effect.try({
-              try: () =>
-                stream.toUIMessageStreamResponse({
-                  sendReasoning: true,
-                  onFinish: async ({ messages }) => {
-                    await convex.mutation(api.chats.appendMessagesToChat, {
-                      id: chatId,
+            stream.toUIMessageStreamResponse({
+              sendReasoning: true,
+              sendSources: true,
+              messageMetadata: () => ({
+                model,
+              }),
+              onFinish: async ({ messages: _messages }) => {
+                const messages =
+                  Schema.decodeUnknownSync(MessagesSchema)(_messages);
+
+                await convex.mutation(api.chats.appendMessagesToChat, {
+                  id,
+                  model,
+                  messages: messages.map((message) => ({
+                    ...message,
+                    metadata: {
                       model,
-                      // TODO: fix messages type
-                      messages: messages.map((messages) => ({
-                        ...messages,
-                        id: undefined,
-                        // biome-ignore lint/suspicious/noExplicitAny: needs fixing
-                      })) as any,
-                    });
-                  },
-                }),
-              catch: (error) => new ChatGenerationError({ cause: error }),
+                    },
+                  })),
+                });
+              },
             }),
           ),
         ),

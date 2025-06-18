@@ -8,77 +8,70 @@ const TextUIPart = v.object({
 
 const ReasoningUIPart = v.object({
   type: v.literal("reasoning"),
-  reasoning: v.string(),
+  text: v.string(),
+  providerMetadata: v.optional(v.any()),
 });
 
-const ToolInvocation = v.union(
-  v.object({
-    state: v.literal("partial-call"),
-    toolCallId: v.string(),
-    toolName: v.string(),
-    args: v.any(),
-  }),
-  v.object({
-    state: v.literal("call"),
-    toolCallId: v.string(),
-    toolName: v.string(),
-    args: v.any(),
-  }),
-  v.object({
-    state: v.literal("result"),
-    toolCallId: v.string(),
-    toolName: v.string(),
-    args: v.any(),
-    result: v.any(),
-  }),
-);
-
-const ToolInvocationUIPart = v.object({
-  type: v.literal("tool-invocation"),
-  toolInvocation: ToolInvocation,
-});
-
-const Source = v.object({
-  sourceType: v.literal("url"),
-  id: v.string(),
+const SourceUrlUIPart = v.object({
+  type: v.literal("source-url"),
+  sourceId: v.string(),
   url: v.string(),
   title: v.optional(v.string()),
+  providerMetadata: v.optional(v.any()),
 });
 
-const SourceUIPart = v.object({
-  type: v.literal("source"),
-  source: Source,
+const SourceDocumentUIPart = v.object({
+  type: v.literal("source-document"),
+  sourceId: v.string(),
+  mediaType: v.string(),
+  title: v.string(),
+  filename: v.optional(v.string()),
+  providerMetadata: v.optional(v.any()),
+});
+
+const FileUIPart = v.object({
+  type: v.literal("file"),
+  mediaType: v.string(),
+  filename: v.optional(v.string()),
+  url: v.string(),
 });
 
 const StepStartUIPart = v.object({
   type: v.literal("step-start"),
 });
 
-const Attachment = v.object({
-  name: v.optional(v.string()),
-  contentType: v.optional(v.string()),
-  url: v.string(),
-});
+// const ToolUIPart = v.object({
+//   type: v.string(),
+//   toolCallId: v.string(),
+//   state: v.union(
+//     v.literal("input-streaming"),
+//     v.literal("input-available"),
+//     v.literal("output-available"),
+//   ),
+//   input: v.optional(v.any()),
+//   output: v.optional(v.any()),
+// });
 
 export const UIMessage = v.object({
-  role: v.union(
-    v.literal("system"),
-    v.literal("user"),
-    v.literal("assistant"),
-    v.literal("data"),
+  id: v.string(),
+  role: v.union(v.literal("system"), v.literal("user"), v.literal("assistant")),
+  metadata: v.optional(
+    v.object({
+      user: v.optional(v.string()),
+      model: v.string(),
+    }),
   ),
-  createdAt: v.optional(v.number()),
-  annotations: v.optional(v.array(v.any())),
   parts: v.array(
     v.union(
       TextUIPart,
       ReasoningUIPart,
-      ToolInvocationUIPart,
-      SourceUIPart,
+      SourceUrlUIPart,
+      SourceDocumentUIPart,
+      FileUIPart,
       StepStartUIPart,
+      // ToolUIPart,
     ),
   ),
-  experimental_attachements: v.optional(v.array(Attachment)),
 });
 
 const schema = defineSchema({

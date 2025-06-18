@@ -1,10 +1,17 @@
-import { useChat } from "@ai-sdk/react";
-import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
+import { type UIMessage, useChat } from "@ai-sdk/react";
+import { useConvexMutation } from "@convex-dev/react-query";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouteContext } from "@tanstack/react-router";
-import { ChevronRightIcon, Loader2Icon, SendIcon } from "lucide-react";
+import {
+  AlertTriangleIcon,
+  ChevronRightIcon,
+  GlobeIcon,
+  Loader2Icon,
+  RefreshCcwIcon,
+  SendIcon,
+} from "lucide-react";
 import { nanoid } from "nanoid";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import Markdown from "react-markdown";
 import TextareaAutosize from "react-textarea-autosize";
 import { Button } from "~/components/ui/button";
@@ -23,27 +30,55 @@ import {
 import { textareaClassName } from "~/components/ui/textarea";
 import { api } from "~/convex/_generated/api";
 import type { Doc, Id } from "~/convex/_generated/dataModel";
-import { modelMetadata } from "~/lib/client/models";
-import type { ModelName } from "~/lib/server/models";
+import { getOpenRouterModelsQueryOptions } from "~/lib/models";
 import { cn } from "~/lib/utils";
+import { Toggle } from "./ui/toggle";
+
+export type UIMessageWithMetadata = UIMessage<{
+  user?: string;
+  model: string;
+}>;
 
 export function Chat({
-  id,
-  onFinish,
+  chatId,
+  initialMessages,
 }: {
-  id?: string;
-  onFinish?: () => void | Promise<void>;
+  chatId?: string;
+  initialMessages?: UIMessageWithMetadata[];
 }) {
   const navigate = useNavigate();
-  const { token } = useRouteContext({ from: "__root__" });
+  const { token } = useRouteContext({ from: "/_authed" });
 
   const createChatMutation = useMutation({
     mutationFn: useConvexMutation(
       api.chats.appendMessagesToChat,
     ).withOptimisticUpdate((localStore, args) => {
-      const currentValue = localStore.getQuery(api.chats.my);
+      const currentChats = localStore.getQuery(api.chats.my);
 
-      if (currentValue && token) {
+      const currentChat = localStore.getQuery(api.chats.byId, {
+        id: args.id,
+      });
+
+      if (currentChat) {
+        localStore.setQuery(
+          api.chats.byId,
+          { id: args.id },
+          {
+            ...currentChat,
+            messages: [
+              ...currentChat.messages,
+              ...args.messages.map((message) => ({
+                ...message,
+                _id: crypto.randomUUID() as Id<"messages">,
+                _creationTime: Date.now(),
+                chat: currentChat._id,
+              })),
+            ],
+          },
+        );
+      }
+
+      if (currentChats && !currentChats.some((chat) => chat.id === args.id)) {
         const newChat: Doc<"chats"> = {
           _id: crypto.randomUUID() as Id<"chats">,
           _creationTime: Date.now(),
@@ -55,7 +90,7 @@ export function Chat({
           user: token,
         };
 
-        localStore.setQuery(api.chats.my, {}, [...currentValue, newChat]);
+        localStore.setQuery(api.chats.my, {}, [...currentChats, newChat]);
 
         localStore.setQuery(
           api.chats.byId,
@@ -78,38 +113,23 @@ export function Chat({
 
   const [input, setInput] = useState("");
 
-  const [model, setModel] = useState<ModelName>(
-    (Object.keys(modelMetadata ?? {}).at(0) ??
-      "gemini-2.5-flash-preview-05-20") as ModelName,
-  );
-  const { messages, status, sendMessage, setMessages } = useChat({
-    onFinish: () => {
-      onFinish?.();
-    },
+  const { data: models } = useQuery(getOpenRouterModelsQueryOptions);
+
+  const [model, setModel] = useState(models?.at(0)?.id ?? "qwen/qwen3-8b:free");
+
+  const {
+    messages,
+    status,
+    sendMessage,
+    error,
+    reload,
+    id: internalId,
+  } = useChat({
+    id: chatId,
+    generateId: () => nanoid(),
+    messages: (initialMessages ??
+      []) as UIMessageWithMetadata[] satisfies UIMessageWithMetadata[],
   });
-
-  const { data: chat } = useQuery({
-    ...convexQuery(api.chats.byId, { id: id! }),
-    enabled: () => Boolean(id),
-  });
-
-  const chatMessages = useMemo(() => {
-    return chat?.messages.map((message) => ({
-      id: message._id,
-      ...message,
-    }));
-  }, [chat?.messages]);
-
-  useEffect(() => {
-    if (chatMessages) {
-      // TODO: fix messages type
-      // biome-ignore lint/suspicious/noExplicitAny: needs fixing
-      setMessages(chatMessages as any);
-    }
-  }, [
-    chatMessages, // TODO: fix messages type
-    setMessages,
-  ]);
 
   function handleSubmit(
     e:
@@ -117,50 +137,45 @@ export function Chat({
       | React.KeyboardEvent<HTMLTextAreaElement>,
   ) {
     e.preventDefault();
-    const chatId = nanoid();
+    setInput("");
 
-    void createChatMutation.mutateAsync({
-      id: chatId,
-      model,
-      messages: [
+    const newMessage = {
+      id: nanoid(),
+      role: "user" as const,
+      parts: [
         {
-          role: "user",
-          parts: [{ type: "text", text: input }],
+          type: "text",
+          text: input,
         },
       ],
+      metadata: {
+        user: token,
+        model,
+      },
+    } satisfies UIMessage;
+
+    void createChatMutation.mutateAsync({
+      id: internalId,
+      model,
+      messages: [newMessage],
     });
 
-    sendMessage(
-      {
-        role: "user",
-        parts: [
-          {
-            type: "text",
-            text: input,
-          },
-        ],
-        metadata: {
-          chatId,
-        },
+    sendMessage(newMessage, {
+      body: {
+        model,
       },
-      {
-        body: {
-          chatId,
-          model,
-        },
-      },
-    );
+    });
 
     void navigate({
-      from: "/chat/",
-      to: "/chat/$chatId",
-      params: { chatId },
+      from: "/chat/$",
+      to: "/chat/$",
+      params: { _splat: internalId },
     });
   }
 
   return (
     <>
-      <div className="absolute inset-0 flex w-full flex-col gap-4 overflow-y-scroll px-[30%] pt-4 pb-48">
+      <div className="absolute inset-0 flex w-full flex-col gap-4 overflow-y-scroll px-[30%] mt-4 mb-48">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -174,7 +189,7 @@ export function Chat({
                   Reasoning
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <div className="prose bg-accent text-accent-foreground rounded p-4">
+                  <div className="prose bg-accent text-accent-foreground rounded p-4 space-y-2 dark:prose-invert">
                     <Markdown>
                       {message.parts
                         .filter((part) => part.type === "reasoning")
@@ -192,29 +207,34 @@ export function Chat({
                 {message.parts.find((part) => part.type === "text")?.text ?? ""}
               </Markdown>
             </div>
-            {chat?.messages.find((m) => m._id === message.id)?.model &&
-              message.role !== "user" && (
-                <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                  {modelMetadata[
-                    chat?.messages.find((m) => m._id === message.id)
-                      ?.model as ModelName
-                  ].icon({
-                    className: "size-4",
-                  })}
-                  <span className="text-muted-foreground text-sm">
-                    {
-                      modelMetadata[
-                        chat?.messages.find((m) => m._id === message.id)
-                          ?.model as ModelName
-                      ].label
-                    }
-                  </span>
-                </div>
-              )}
+            {message.metadata?.model && message.role !== "user" && (
+              <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="text-muted-foreground text-sm">
+                  {message.metadata?.model}
+                </span>
+              </div>
+            )}
           </div>
         ))}
+        {error ? (
+          <div className="flex items-center gap-2 px-4">
+            <AlertTriangleIcon className="size-4" />
+            <p className="text-sm">{error.message}</p>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                void reload();
+              }}
+            >
+              <RefreshCcwIcon className="size-4" />
+            </Button>
+          </div>
+        ) : null}
         {status === "submitted" ? (
-          <Loader2Icon className="animate-spin" />
+          <div className="flex px-4">
+            <Loader2Icon className="animate-spin size-8" />
+          </div>
         ) : null}
       </div>
 
@@ -227,10 +247,7 @@ export function Chat({
             <TextareaAutosize
               name="prompt"
               value={input}
-              // TODO: Why are these types not working
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setInput(e.target.value)
-              }
+              onChange={(e) => setInput(e.target.value)}
               className={cn(textareaClassName, "w-full resize-none")}
               minRows={4}
               onKeyUp={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -238,27 +255,35 @@ export function Chat({
                   handleSubmit(e);
                 }
               }}
+              placeholder="Ask me anything..."
             />
-
-            <Button type="submit" aria-label="Send message" size="icon">
+          </div>
+          <div className="flex flex-row gap-x-2 items-center">
+            <Select value={model} onValueChange={(value) => setModel(value)}>
+              <SelectTrigger className="max-w-min">
+                <SelectValue placeholder="Model" />
+              </SelectTrigger>
+              <SelectContent>
+                {models?.map((model) => (
+                  <SelectItem key={model.id} value={model.id}>
+                    {model.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Toggle aria-label="Enable search" variant="outline">
+              <GlobeIcon className="size-4" />
+              Search
+            </Toggle>
+            <Button
+              type="submit"
+              aria-label="Send message"
+              size="icon"
+              className="ml-auto"
+            >
               <SendIcon fill="currentColor" />
             </Button>
           </div>
-          <Select
-            value={model}
-            onValueChange={(value) => setModel(value as ModelName)}
-          >
-            <SelectTrigger className="max-w-min">
-              <SelectValue placeholder="Model" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(modelMetadata).map(([name, meta]) => (
-                <SelectItem key={name} value={name}>
-                  {meta.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </form>
       </div>
     </>
