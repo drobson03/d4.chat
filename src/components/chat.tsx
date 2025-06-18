@@ -13,7 +13,7 @@ import {
   SquareIcon,
 } from "lucide-react";
 import { nanoid } from "nanoid";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import Markdown from "react-markdown";
 import TextareaAutosize from "react-textarea-autosize";
 import { Button } from "~/components/ui/button";
@@ -193,7 +193,7 @@ export function Chat({
 
   return (
     <>
-      <div className="absolute inset-0 flex w-full flex-col gap-4 overflow-y-scroll px-[30%] mt-4 mb-48">
+      <div className="absolute inset-0 flex w-full flex-col gap-4 overflow-y-auto px-[30%] mt-4 mb-48">
         {messages.map((message) => (
           <Message key={message.id} message={message} />
         ))}
@@ -318,22 +318,26 @@ export function Chat({
   );
 }
 
-function MessageReasoning({ message }: { message: UIMessageWithMetadata }) {
-  const reasoningParts = useMemo(
-    () => message.parts.filter((part) => part.type === "reasoning"),
-    [message.parts],
-  );
-  const reasoning = useMemo(
-    () =>
-      reasoningParts
-        .map((part) => part.text)
-        .join("\n")
-        .replaceAll("\\n", "")
-        .trim(),
-    [reasoningParts],
-  );
+// Memoized MessageReasoning component to prevent unnecessary re-renders
+const MessageReasoning = memo(function MessageReasoning({
+  message,
+}: {
+  message: UIMessageWithMetadata;
+}) {
+  const reasoningData = useMemo(() => {
+    const reasoningParts = message.parts.filter(
+      (part) => part.type === "reasoning",
+    );
+    const reasoning = reasoningParts
+      .map((part) => part.text)
+      .join("\n")
+      .replaceAll("\\n", "")
+      .trim();
 
-  return reasoningParts.length > 0 ? (
+    return { reasoningParts, reasoning };
+  }, [message.parts]);
+
+  return reasoningData.reasoningParts.length > 0 ? (
     <Collapsible className="flex flex-col gap-2">
       <CollapsibleTrigger className="group flex items-center gap-1">
         <ChevronRightIcon className="size-4 transition-transform group-data-[state=open]:rotate-90" />
@@ -341,28 +345,29 @@ function MessageReasoning({ message }: { message: UIMessageWithMetadata }) {
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className="prose bg-accent text-accent-foreground rounded p-4 space-y-2 dark:prose-invert">
-          <Markdown>{reasoning}</Markdown>
+          <Markdown>{reasoningData.reasoning}</Markdown>
         </div>
       </CollapsibleContent>
     </Collapsible>
   ) : null;
-}
+});
 
-function Message({ message }: { message: UIMessageWithMetadata }) {
-  const textParts = useMemo(
-    () => message.parts.filter((part) => part.type === "text"),
-    [message.parts],
-  );
+// Memoized Message component to prevent unnecessary re-renders
+const Message = memo(function Message({
+  message,
+}: {
+  message: UIMessageWithMetadata;
+}) {
+  const textData = useMemo(() => {
+    const textParts = message.parts.filter((part) => part.type === "text");
+    const text = textParts
+      .map((part) => part.text)
+      .join("")
+      .replaceAll("\\n", "")
+      .trim();
 
-  const text = useMemo(
-    () =>
-      textParts
-        .map((part) => part.text)
-        .join("")
-        .replaceAll("\\n", "")
-        .trim(),
-    [textParts],
-  );
+    return { textParts, text };
+  }, [message.parts]);
 
   return (
     <div
@@ -371,7 +376,7 @@ function Message({ message }: { message: UIMessageWithMetadata }) {
     >
       <MessageReasoning message={message} />
       <div className="prose dark:prose-invert">
-        <Markdown>{text}</Markdown>
+        <Markdown>{textData.text}</Markdown>
       </div>
       {message.metadata?.model && message.role !== "user" && (
         <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
@@ -382,4 +387,4 @@ function Message({ message }: { message: UIMessageWithMetadata }) {
       )}
     </div>
   );
-}
+});
