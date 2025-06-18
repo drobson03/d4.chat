@@ -16,7 +16,7 @@
     "@clerk/backend": "2.2.0-snapshot.v20250616221205",
     "@clerk/tanstack-react-start": "0.18.0-snapshot.v20250616221205",
     "@convex-dev/react-query": "0.0.0-alpha.11",
-    "@openrouter/ai-sdk-provider": "github:OpenRouterTeam/ai-sdk-provider#devin/1749331252-migrate-to-ai-sdk-v2",
+    "@openrouter/ai-sdk-provider": "file:openrouter-ai-sdk-provider-0.7.1.tgz",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-collapsible": "^1.1.11",
     "@radix-ui/react-dialog": "^1.1.14",

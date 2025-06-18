@@ -24,8 +24,8 @@ importers:
         specifier: 0.0.0-alpha.11
         version: 0.0.0-alpha.11(@standard-schema/spec@1.0.0)(@tanstack/react-query@5.80.7(react@19.1.0))(convex@1.24.8(@clerk/clerk-react@5.32.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0))(react@19.1.0)(typescript@5.8.3)(zod@3.25.67)
       '@openrouter/ai-sdk-provider':
-        specifier: github:OpenRouterTeam/ai-sdk-provider#devin/1749331252-migrate-to-ai-sdk-v2
-        version: https://codeload.github.com/OpenRouterTeam/ai-sdk-provider/tar.gz/9fb39d6d61f320228163e5e18723fb71d008a601(ai@5.0.0-alpha.14(zod@3.25.67))(zod@3.25.67)
+        specifier: file:openrouter-ai-sdk-provider-0.7.1.tgz
+        version: file:openrouter-ai-sdk-provider-0.7.1.tgz(ai@5.0.0-alpha.14(zod@3.25.67))(zod@3.25.67)
       '@radix-ui/react-avatar':
         specifier: ^1.1.10
         version: 1.1.10(@types/react-dom@19.1.6(@types/react@19.1.8))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -1074,8 +1074,8 @@ packages:
     resolution: {integrity: sha512-T8TbSnGsxo6TDBJx/Sgv/BlVJL3tshxZP7Aq5R1mSnM5OcHY2dQaxLMu2+E8u3gN0MLOzdjurqN4ZRVuzQycOQ==}
     engines: {node: '>=8.0'}
 
-  '@openrouter/ai-sdk-provider@https://codeload.github.com/OpenRouterTeam/ai-sdk-provider/tar.gz/9fb39d6d61f320228163e5e18723fb71d008a601':
-    resolution: {tarball: https://codeload.github.com/OpenRouterTeam/ai-sdk-provider/tar.gz/9fb39d6d61f320228163e5e18723fb71d008a601}
+  '@openrouter/ai-sdk-provider@file:openrouter-ai-sdk-provider-0.7.1.tgz':
+    resolution: {integrity: sha512-6KTkz1hBoIR2IO+LZWf1Q5MT3LYH286ztdkR7TxjCIucQNxNSQjmjtK2zkj7v/+kVA1G9X/jUfNV+ppQaRKvuA==, tarball: file:openrouter-ai-sdk-provider-0.7.1.tgz}
     version: 0.7.1
     engines: {node: '>=18'}
     peerDependencies:
@@ -5703,7 +5703,7 @@ snapshots:
 
   '@oozcitak/util@8.3.8': {}
 
-  '@openrouter/ai-sdk-provider@https://codeload.github.com/OpenRouterTeam/ai-sdk-provider/tar.gz/9fb39d6d61f320228163e5e18723fb71d008a601(ai@5.0.0-alpha.14(zod@3.25.67))(zod@3.25.67)':
+  '@openrouter/ai-sdk-provider@file:openrouter-ai-sdk-provider-0.7.1.tgz(ai@5.0.0-alpha.14(zod@3.25.67))(zod@3.25.67)':
     dependencies:
       ai: 5.0.0-alpha.14(zod@3.25.67)
       zod: 3.25.67
