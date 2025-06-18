@@ -1,10 +1,25 @@
 # d4.chat
 
-## Deploying
+## Running Locally
 
-Setup Convex & Clerk environments.
+Setup Convex & Clerk Development environments.
 
-Copy `.env.example` to `.env` and fill in the values from Clerk & Convex.
+Copy `.env.example` to `.env.local` and fill in the values from Clerk & Convex.
+
+Run the following command to install dependencies:
+
+```bash
+pnpm install
+```
+
+Run the following commands (simultaneously) to start the development server:
+
+```bash
+pnpm dev
+pnpm convex dev
+```
+
+The application is now running at `http://localhost:3000`.
 
 ## Time Tracking
 
