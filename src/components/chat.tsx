@@ -1,9 +1,18 @@
 import { useChat } from "@ai-sdk/react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useNavigate, useRouteContext } from "@tanstack/react-router";
+import { ChevronRightIcon, Loader2Icon, SendIcon } from "lucide-react";
+import { nanoid } from "nanoid";
 import { useEffect, useMemo, useState } from "react";
 import Markdown from "react-markdown";
-import type { ModelName } from "~/lib/server/models";
 import TextareaAutosize from "react-textarea-autosize";
+import { Button } from "~/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "~/components/ui/collapsible";
 import {
   Select,
   SelectContent,
@@ -11,21 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { cn } from "~/lib/utils";
 import { textareaClassName } from "~/components/ui/textarea";
-import { Button } from "~/components/ui/button";
-import { ChevronRightIcon, Loader2Icon, SendIcon } from "lucide-react";
-import { nanoid } from "nanoid";
-import { useNavigate, useRouteContext } from "@tanstack/react-router";
-import { modelMetadata } from "~/lib/client/models";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "~/components/ui/collapsible";
-import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
 import { api } from "~/convex/_generated/api";
 import type { Doc, Id } from "~/convex/_generated/dataModel";
+import { modelMetadata } from "~/lib/client/models";
+import type { ModelName } from "~/lib/server/models";
+import { cn } from "~/lib/utils";
 
 export function Chat({
   id,
@@ -103,9 +103,13 @@ export function Chat({
   useEffect(() => {
     if (chatMessages) {
       // TODO: fix messages type
+      // biome-ignore lint/suspicious/noExplicitAny: needs fixing
       setMessages(chatMessages as any);
     }
-  }, [chatMessages]);
+  }, [
+    chatMessages, // TODO: fix messages type
+    setMessages,
+  ]);
 
   function handleSubmit(
     e:

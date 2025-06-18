@@ -1,11 +1,7 @@
 import { useUser } from "@clerk/tanstack-react-start";
 import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  Link,
-  type RegisteredRouter,
-  type ValidateLinkOptions,
-} from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { isAfter, isToday, isYesterday, subDays } from "date-fns";
 import { PinIcon, PinOffIcon, TrashIcon } from "lucide-react";
 import type React from "react";
@@ -22,7 +18,7 @@ import {
   SidebarMenuItem,
 } from "~/components/ui/sidebar";
 import { api } from "~/convex/_generated/api";
-import { Doc } from "~/convex/_generated/dataModel";
+import type { Doc } from "~/convex/_generated/dataModel";
 import { Button } from "./ui/button";
 
 type Chat = Doc<"chats">;

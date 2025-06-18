@@ -1,16 +1,12 @@
 import { createServerFileRoute } from "@tanstack/react-start/server";
 import { convertToModelMessages, smoothStream, streamText } from "ai";
-import { Effect, pipe, Predicate, Schema } from "effect";
+import { Effect, pipe, Schema } from "effect";
 import { api } from "~/convex/_generated/api";
-import {
-  createEffectApiHandler,
-  RequestTag,
-  UnauthorizedError,
-} from "~/lib/server/api-runtime";
+import { ChatGenerationError } from "~/lib/server/ai/error";
+import { createEffectApiHandler, RequestTag } from "~/lib/server/api-runtime";
 import { ConvexConfig, ConvexHttpClient } from "~/lib/server/convex";
 import { models } from "~/lib/server/models";
 import { ChatRequestBodySchema } from "~/lib/validation/chat-request";
-import { ChatGenerationError } from "~/lib/server/ai/error";
 
 export const ServerRoute = createServerFileRoute("/api/chat").methods({
   POST: createEffectApiHandler(
@@ -25,6 +21,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       Effect.andThen(([{ messages, model, chatId }, convex]) =>
         pipe(
           // TODO: fix messages type
+          // biome-ignore lint/suspicious/noExplicitAny: needs fixing
           Effect.try(() => convertToModelMessages(messages as any)),
           Effect.andThen((messages) =>
             Effect.try({
@@ -51,6 +48,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                       messages: messages.map((messages) => ({
                         ...messages,
                         id: undefined,
+                        // biome-ignore lint/suspicious/noExplicitAny: needs fixing
                       })) as any,
                     });
                   },

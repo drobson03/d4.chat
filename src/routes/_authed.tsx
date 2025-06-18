@@ -1,14 +1,14 @@
+import { convexQuery } from "@convex-dev/react-query";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { AppSidebar } from "~/components/app-sidebar";
+import { Breadcrumbs } from "~/components/breadcrumbs";
 import { Separator } from "~/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "~/components/ui/sidebar";
-import { AppSidebar } from "~/components/app-sidebar";
-import { Breadcrumbs } from "~/components/breadcrumbs";
 import { api } from "~/convex/_generated/api";
-import { convexQuery } from "@convex-dev/react-query";
 
 export const Route = createFileRoute("/_authed")({
   beforeLoad: async ({ context }) => {

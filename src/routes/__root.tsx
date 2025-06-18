@@ -1,19 +1,19 @@
 /// <reference types="vite/client" />
 
+import { ClerkProvider, useAuth } from "@clerk/tanstack-react-start";
 import type { ConvexQueryClient } from "@convex-dev/react-query";
 import type { QueryClient } from "@tanstack/react-query";
-import type { ConvexReactClient } from "convex/react";
 import {
+  createRootRouteWithContext,
   HeadContent,
   Outlet,
   Scripts,
-  createRootRouteWithContext,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import type { ConvexReactClient } from "convex/react";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { fetchClerkAuth } from "~/lib/server/auth";
 import styles from "~/styles/app.css?url";
-import { ClerkProvider, useAuth } from "@clerk/tanstack-react-start";
-import { ConvexProviderWithClerk } from "convex/react-clerk";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;

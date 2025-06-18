@@ -54,4 +54,5 @@ export function createEffectApiHandler<E extends Error | unknown>(
 
 export class UnauthorizedError extends Data.TaggedError(
   "UnauthorizedError",
+  // biome-ignore lint/complexity/noBannedTypes: empty
 )<{}> {}

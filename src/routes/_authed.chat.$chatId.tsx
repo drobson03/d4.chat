@@ -1,5 +1,5 @@
 import { convexQuery } from "@convex-dev/react-query";
-import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Chat } from "~/components/chat";
 import { api } from "~/convex/_generated/api";
 

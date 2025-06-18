@@ -1,7 +1,6 @@
-import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
 import { UIMessage } from "./schema";
-import { Id } from "./_generated/dataModel";
 
 export const my = query({
   handler: async (ctx) => {

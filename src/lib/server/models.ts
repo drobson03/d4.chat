@@ -1,5 +1,5 @@
-import { Schema } from "effect";
 import { google } from "@ai-sdk/google";
+import { Schema } from "effect";
 
 export const ModelSchema = Schema.Union(
   Schema.Literal("gemini-2.5-flash-preview-05-20"),

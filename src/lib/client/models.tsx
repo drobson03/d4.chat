@@ -1,11 +1,11 @@
-import type { ModelName } from "~/lib/server/models";
 import { Gemini } from "@ridemountainpig/svgl-react";
+import type { ModelName } from "~/lib/server/models";
 
 type ModelMetadata = {
   label: string;
   description: string;
   lab: string;
-  icon: (props: any) => React.ReactNode;
+  icon: (props: React.SVGProps<SVGSVGElement>) => React.ReactNode;
 };
 
 export const modelMetadata: Record<ModelName, ModelMetadata> = {
