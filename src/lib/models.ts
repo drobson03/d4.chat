@@ -49,7 +49,7 @@ async function getModels() {
     OpenRouterModelsResponseSchema,
   )(data);
 
-  return models.data
+  const freeModels = models.data
     .filter(
       (model) =>
         model.id.endsWith(":free") &&
@@ -57,6 +57,24 @@ async function getModels() {
         model.architecture.output_modalities.includes("text"),
     )
     .sort((a, b) => a.name.localeCompare(b.name));
+
+  const modelsByProvider = freeModels.reduce(
+    (acc, model) => {
+      const provider = model.id.split("/")[0];
+
+      if (!provider) {
+        return acc;
+      }
+
+      acc[provider] ??= [];
+      acc[provider].push(model);
+
+      return acc;
+    },
+    {} as Record<string, (typeof freeModels)[number][]>,
+  );
+
+  return { models: freeModels, modelsByProvider };
 }
 
 export const getOpenRouterModelsQueryOptions = queryOptions({

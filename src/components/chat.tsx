@@ -34,6 +34,7 @@ import { api } from "~/convex/_generated/api";
 import type { Doc, Id } from "~/convex/_generated/dataModel";
 import { getOpenRouterModelsQueryOptions } from "~/lib/models";
 import { cn } from "~/lib/utils";
+import { ModelSelector } from "./model-selector";
 import { Toggle } from "./ui/toggle";
 
 export type UIMessageWithMetadata = UIMessage<{
@@ -115,7 +116,8 @@ export function Chat({
 
   const [input, setInput] = useState("");
 
-  const { data: models } = useQuery(getOpenRouterModelsQueryOptions);
+  const { data: modelData } = useQuery(getOpenRouterModelsQueryOptions);
+  const models = modelData?.models;
 
   const [model, setModel] = useState("qwen/qwen3-8b:free");
   const currentModel = useMemo(
@@ -240,18 +242,7 @@ export function Chat({
             />
           </div>
           <div className="flex flex-row gap-x-2 items-center">
-            <Select value={model} onValueChange={(value) => setModel(value)}>
-              <SelectTrigger className="max-w-min">
-                <SelectValue placeholder="Model" />
-              </SelectTrigger>
-              <SelectContent>
-                {models?.map((model) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    {model.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ModelSelector model={model} setModel={setModel} />
             {(currentModel?.supported_parameters ?? []).includes(
               "reasoning",
             ) ? (
