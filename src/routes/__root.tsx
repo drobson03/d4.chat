@@ -12,7 +12,10 @@ import {
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { useContext } from "react";
+import { ThemeContext, ThemeProvider } from "~/components/theme";
 import { fetchClerkAuth } from "~/lib/server/auth";
+import { cn } from "~/lib/utils";
 import styles from "~/styles/app.css?url";
 
 export const Route = createRootRouteWithContext<{
@@ -54,19 +57,26 @@ function RootComponent() {
   const context = Route.useRouteContext();
 
   return (
-    <ClerkProvider>
-      <ConvexProviderWithClerk client={context.convexClient} useAuth={useAuth}>
-        <RootDocument>
-          <Outlet />
-        </RootDocument>
-      </ConvexProviderWithClerk>
-    </ClerkProvider>
+    <ThemeProvider>
+      <ClerkProvider>
+        <ConvexProviderWithClerk
+          client={context.convexClient}
+          useAuth={useAuth}
+        >
+          <RootDocument>
+            <Outlet />
+          </RootDocument>
+        </ConvexProviderWithClerk>
+      </ClerkProvider>
+    </ThemeProvider>
   );
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const { computedTheme } = useContext(ThemeContext);
+
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={cn(computedTheme === "dark" && "dark")}>
       <head>
         <HeadContent />
       </head>

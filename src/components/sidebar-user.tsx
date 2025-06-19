@@ -1,11 +1,21 @@
 import { useAuth, useUser } from "@clerk/tanstack-react-start";
-import { ChevronsUpDownIcon, LogOutIcon } from "lucide-react";
+import {
+  ChevronsUpDownIcon,
+  LogOutIcon,
+  MonitorIcon,
+  MoonIcon,
+  SunIcon,
+} from "lucide-react";
+import { useContext } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import {
@@ -14,11 +24,14 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "~/components/ui/sidebar";
+import { ThemeContext } from "./theme";
+import { Toggle } from "./ui/toggle";
 
 export function SidebarUser() {
   const { signOut } = useAuth();
   const { user } = useUser();
   const { isMobile } = useSidebar();
+  const { theme, setTheme } = useContext(ThemeContext);
 
   return (
     <SidebarMenu>
@@ -50,6 +63,48 @@ export function SidebarUser() {
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
             side={isMobile ? "bottom" : "top"}
           >
+            <DropdownMenuGroup className="flex flex-row gap-1 justify-stretch items-center">
+              <DropdownMenuLabel className="text-sm font-medium grow-0">
+                Theme
+              </DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Toggle
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setTheme("system");
+                  }}
+                  pressed={theme === "system"}
+                  className="focus-visible:ring-0 grow"
+                >
+                  <MonitorIcon />
+                </Toggle>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Toggle
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setTheme("light");
+                  }}
+                  pressed={theme === "light"}
+                  className="focus-visible:ring-0 grow"
+                >
+                  <SunIcon />
+                </Toggle>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Toggle
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setTheme("dark");
+                  }}
+                  pressed={theme === "dark"}
+                  className="focus-visible:ring-0 grow"
+                >
+                  <MoonIcon />
+                </Toggle>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
             <DropdownMenuItem className="w-full" asChild>
               <button type="button" onClick={() => signOut()}>
                 <LogOutIcon />
